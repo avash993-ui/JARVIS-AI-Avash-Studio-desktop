@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Jarvis</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="brand"><div class="orb"></div><span>جارویس</span></div>
+    <button class="nav-item active" data-screen="chat">💬 گفتگو</button>
+    <button class="nav-item" data-screen="setup">🔌 اتصال API</button>
+    <button class="nav-item" data-screen="shortcuts">⭐ میانبرها</button>
+    <button class="nav-item" data-screen="settings">⚙️ تنظیمات</button>
+    <div class="spacer"></div>
+    <div class="mini" id="wakeStatus">گوش‌به‌زنگ: خاموش</div>
+  </div>
+
+  <div class="content">
+    <div class="topbar"><h1 id="topTitle">گفتگو با جارویس</h1></div>
+
+    <!-- ===== CHAT ===== -->
+    <div class="screen active" id="screen-chat">
+      <div class="chat-wrap">
+        <div class="history-panel" id="historyPanel"></div>
+        <div class="chat-main">
+          <div class="messages" id="messages"></div>
+          <div class="composer">
+            <button class="icon-btn" id="attachBtn" title="پیوست فایل">📎</button>
+            <textarea id="composerInput" rows="1" placeholder="پیام بده…"></textarea>
+            <button class="icon-btn" id="micBtn" title="میکروفون">🎙</button>
+            <button class="icon-btn primary" id="sendBtn" title="ارسال">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SETUP ===== -->
+    <div class="screen" id="screen-setup">
+      <div class="panel-scroll">
+        <p class="hint">جارویس با هر سرویس هوش مصنوعی سازگار با OpenAI کار می‌کنه. یکی رو انتخاب کن، کلیدت رو بچسبون و تست کن.</p>
+        <div class="field-label">سرویس</div>
+        <div class="chip-row" id="providerChips"></div>
+        <div class="field-label">آدرس API (تا /v1)</div>
+        <input type="text" id="apiBase" placeholder="https://api.example.com/v1">
+        <div class="field-label">کلید API</div>
+        <input type="password" id="apiKey" placeholder="sk-...">
+        <div class="field-label">مدل</div>
+        <div class="row">
+          <input type="text" id="apiModel" placeholder="نام مدل" style="flex:1">
+          <button class="btn" id="fetchModelsBtn">گرفتن لیست مدل‌ها</button>
+        </div>
+        <select id="modelList" style="margin-top:8px; display:none;"></select>
+        <div class="row" style="margin-top:18px;">
+          <button class="btn outline" id="testBtn">تست اتصال</button>
+          <button class="btn gold" id="saveApiBtn">ذخیره</button>
+          <span id="setupStatus"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SHORTCUTS ===== -->
+    <div class="screen" id="screen-shortcuts">
+      <div class="panel-scroll">
+        <p class="hint">کامپیوتر خط تلفن نداره، پس «زنگ زدن» این‌جا یعنی باز کردن واتس‌اپ وب با همون شماره. میانبر بساز تا بگی «زنگ بزن [اسم]».</p>
+        <div class="field-label">میانبر جدید</div>
+        <div class="row">
+          <input type="text" id="shortcutAlias" placeholder="اسم (مثلاً مامان)" style="flex:1">
+          <input type="text" id="shortcutNumber" placeholder="شماره با کد کشور، مثلاً 989121234567" style="flex:1">
+          <button class="btn gold" id="addShortcutBtn">افزودن</button>
+        </div>
+        <div class="field-label">میانبرهای ذخیره‌شده</div>
+        <div id="shortcutList"></div>
+      </div>
+    </div>
+
+    <!-- ===== SETTINGS ===== -->
+    <div class="screen" id="screen-settings">
+      <div class="panel-scroll">
+        <div class="field-label">نام دستیار</div>
+        <input type="text" id="assistantName" placeholder="جارویس">
+
+        <div class="field-label">حالت توسعه‌دهنده</div>
+        <div id="devLocked">
+          <div class="row">
+            <input type="password" id="devPin" placeholder="رمز توسعه‌دهنده" style="flex:1">
+            <button class="btn gold" id="devUnlockBtn">فعال</button>
+          </div>
+          <div class="hint status-err" id="devMsg"></div>
+        </div>
+        <div id="devUnlocked" style="display:none;">
+          <p class="status-ok">فعاله ✓ — میانبر نامحدود، حافظه‌ی ۵۰ مورد، جستجوی خودکار وب.</p>
+          <button class="btn outline" id="devLockBtn">غیرفعال کردن</button>
+          <div class="field-label">تغییر رمز توسعه‌دهنده</div>
+          <div class="row">
+            <input type="password" id="newDevPin" placeholder="رمز جدید" style="flex:1">
+            <button class="btn" id="changeDevPinBtn">ذخیره‌ی رمز جدید</button>
+          </div>
+        </div>
+
+        <div class="switch-row">
+          <span class="label">جستجوی وب برای سوال‌های تازه</span>
+          <label class="switch"><input type="checkbox" id="webOnToggle"><span class="slider"></span></label>
+        </div>
+        <div class="switch-row">
+          <span class="label">جواب‌های تایپی هم با صدا خونده بشن</span>
+          <label class="switch"><input type="checkbox" id="speakTypedToggle"><span class="slider"></span></label>
+        </div>
+        <div class="switch-row">
+          <span class="label">🎙 گوش‌به‌زنگ: با گفتن «هی جارویس» باز بشه</span>
+          <label class="switch"><input type="checkbox" id="wakeToggle"><span class="slider"></span></label>
+        </div>
+        <p class="hint" id="wakeHint"></p>
+
+        <div class="field-label">صدای خروجی (TTS)</div>
+        <select id="voiceSelect"></select>
+
+        <div class="field-label">میزان شوخ‌طبعی</div>
+        <input type="range" id="humorRange" min="0" max="100" value="40" style="width:100%;">
+
+        <div class="field-label">حافظه (چیزهایی که یادش بمونه)</div>
+        <div id="memoryList"></div>
+        <div class="row">
+          <input type="text" id="memoryInput" placeholder="مثلاً: اسم من آوشه" style="flex:1">
+          <button class="btn gold" id="memoryAddBtn">افزودن</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="wake.js"></script>
+<script src="persona.js"></script>
+<script src="chatcore.js"></script>
+<script src="artifact.js"></script>
+<script src="renderer.js"></script>
+</body>
+</html>

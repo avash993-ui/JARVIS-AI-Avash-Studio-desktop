@@ -1,0 +1,24 @@
+{
+  "name": "jarvis-desktop",
+  "version": "1.0.0",
+  "description": "جارویس - دستیار هوشمند، نسخه‌ی کامپیوتر",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "author": "Avash Studio",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.jarvis.assistant.desktop",
+    "productName": "Jarvis",
+    "files": ["main.js", "preload.js", "src/**/*", "assets/**/*"],
+    "win": { "target": "nsis" },
+    "mac": { "target": "dmg" },
+    "linux": { "target": "AppImage" }
+  }
+}
