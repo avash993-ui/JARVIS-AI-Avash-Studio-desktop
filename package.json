@@ -16,9 +16,21 @@
   "build": {
     "appId": "com.jarvis.assistant.desktop",
     "productName": "Jarvis",
-    "files": ["main.js", "preload.js", "src/**/*", "assets/**/*"],
-    "win": { "target": "nsis" },
-    "mac": { "target": "dmg" },
-    "linux": { "target": "AppImage" }
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    },
+    "publish": "never"
   }
 }
