@@ -138,23 +138,6 @@ ipcMain.handle('api:models', async (_e, { base, key }) => {
   return [...out].sort();
 });
 
-// ---------- local build/run capability (opt-in, per-command confirmation) ----------
-// The renderer never runs a command on its own: the user must enable the toggle in Settings
-// AND click "اجرا" on each individual command card. This handler just executes once approved.
-ipcMain.handle('dialog:pickFolder', async () => {
-  const r = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] });
-  if (r.canceled || !r.filePaths.length) return null;
-  return r.filePaths[0];
-});
-ipcMain.handle('exec:run', async (_e, { command, cwd }) => {
-  const { exec } = require('child_process');
-  return new Promise((resolve) => {
-    exec(command, { cwd: cwd || app.getPath('home'), timeout: 120000, maxBuffer: 5 * 1024 * 1024 }, (err, stdout, stderr) => {
-      resolve({ ok: !err, code: err ? err.code : 0, stdout: stdout || '', stderr: stderr || (err ? String(err.message) : '') });
-    });
-  });
-});
-
 // ---------- file dialogs (attachments, zip export) ----------
 ipcMain.handle('dialog:openFiles', async () => {
   const r = await dialog.showOpenDialog(mainWindow, { properties: ['openFile', 'multiSelections'] });
@@ -208,15 +191,6 @@ function buildZip(parts) {
   end.writeUInt32LE(centralBuf.length, 12); end.writeUInt32LE(centralStart, 16);
   return Buffer.concat([...chunks, centralBuf, end]);
 }
-// ---------- single-file download, like Claude's file cards (one file, not a whole zip) ----------
-ipcMain.handle('file:saveOne', async (_e, { suggestedName, content }) => {
-  const r = await dialog.showSaveDialog(mainWindow, { defaultPath: suggestedName || 'jarvis-file.txt' });
-  if (r.canceled || !r.filePath) return false;
-  fs.writeFileSync(r.filePath, content, 'utf-8');
-  shell.showItemInFolder(r.filePath);
-  return true;
-});
-
 ipcMain.handle('export:zip', async (_e, { suggestedName, parts }) => {
   if (!parts || !parts.length) return false;
   const r = await dialog.showSaveDialog(mainWindow, { defaultPath: suggestedName || 'jarvis-project.zip' });
@@ -246,7 +220,7 @@ function createMainWindow() {
 
 function createOverlayWindow() {
   overlayWindow = new BrowserWindow({
-    width: 170, height: 170, show: false, frame: false, transparent: true,
+    width: 360, height: 420, show: false, frame: false, transparent: true,
     alwaysOnTop: true, resizable: false, skipTaskbar: true,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
   });
@@ -258,7 +232,7 @@ ipcMain.handle('overlay:show', () => {
   if (!overlayWindow) return;
   const { screen } = require('electron');
   const area = screen.getPrimaryDisplay().workArea;
-  overlayWindow.setPosition(area.x + area.width - 200, area.y + area.height - 220);
+  overlayWindow.setPosition(area.x + area.width - 380, area.y + area.height - 460);
   overlayWindow.show();
 });
 ipcMain.handle('overlay:hide', () => overlayWindow && overlayWindow.hide());

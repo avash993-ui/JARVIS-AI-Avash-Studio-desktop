@@ -59,67 +59,23 @@ function renderMessages() {
   c.msgs.forEach((m) => {
     const div = document.createElement('div');
     div.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
-    if (m.role === 'assistant') {
-      const parts = window.Artifact.extract(m.text);
-      if (parts.length) { div.appendChild(buildFileCards(parts)); div.appendChild(document.createElement('br')); }
-      const run = parseRunCommand(m.text);
-      if (run) { div.appendChild(buildRunCard(run)); div.appendChild(document.createElement('br')); }
+    if (m.role === 'assistant' && window.Artifact.extract(m.text).length) {
+      const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'شامل فایل قابل خروجی';
+      div.appendChild(tag);
+      const exportBtn = document.createElement('button');
+      exportBtn.className = 'btn'; exportBtn.style.marginBottom = '6px'; exportBtn.textContent = '📦 خروجی zip';
+      exportBtn.addEventListener('click', () => exportAsProject(m.text));
+      div.appendChild(exportBtn); div.appendChild(document.createElement('br'));
     }
-    div.appendChild(document.createTextNode(stripRunLine(m.text)));
+    div.appendChild(document.createTextNode(m.text));
     el.appendChild(div);
   });
   el.scrollTop = el.scrollHeight;
 }
-
-// ---------- file cards: a download button per file, like Claude's file cards ----------
-function extOf(name) { const i = name.lastIndexOf('.'); return i >= 0 ? name.slice(i + 1).toLowerCase() : ''; }
-function iconFor(ext) {
-  return { js: '📜', ts: '📜', py: '🐍', json: '🧩', md: '📝', html: '🌐', css: '🎨', kt: '📦', java: '📦', txt: '📄', csv: '📊' }[ext] || '📄';
-}
-function buildFileCards(parts) {
-  const wrap = document.createElement('div'); wrap.className = 'file-cards';
-  parts.forEach((p) => {
-    const card = document.createElement('div'); card.className = 'file-card';
-    const icon = document.createElement('span'); icon.className = 'file-icon'; icon.textContent = iconFor(extOf(p.name));
-    const name = document.createElement('span'); name.className = 'file-name'; name.textContent = p.name;
-    const dl = document.createElement('button'); dl.className = 'btn file-dl'; dl.textContent = '⬇ دانلود';
-    dl.addEventListener('click', () => window.jarvis.files.saveOne({ suggestedName: p.name, content: p.body }));
-    card.appendChild(icon); card.appendChild(name); card.appendChild(dl);
-    wrap.appendChild(card);
-  });
-  if (parts.length > 1) {
-    const allBtn = document.createElement('button'); allBtn.className = 'btn gold'; allBtn.style.marginTop = '6px';
-    allBtn.textContent = '📦 دانلود همه (zip)';
-    allBtn.addEventListener('click', () => window.jarvis.files.exportZip({ suggestedName: 'jarvis-project.zip', parts }));
-    wrap.appendChild(allBtn);
-  }
-  return wrap;
-}
-
-// ---------- local build/run: only if the user turned it on in Settings, and only after they click "اجرا" ----------
-const runLineRe = /^\s*RUN:\s*(.+)$/im;
-function parseRunCommand(text) { const m = runLineRe.exec(text); return m ? m[1].trim() : null; }
-function stripRunLine(text) { return text.replace(runLineRe, '').trim(); }
-function buildRunCard(command) {
-  const card = document.createElement('div'); card.className = 'run-card';
-  const label = document.createElement('div'); label.className = 'run-label'; label.textContent = 'پیشنهاد اجرای دستور روی لپ‌تاپت:';
-  const code = document.createElement('code'); code.className = 'run-cmd'; code.textContent = command;
-  const out = document.createElement('pre'); out.className = 'run-out'; out.style.display = 'none';
-  const row = document.createElement('div'); row.className = 'row';
-  const runBtn = document.createElement('button'); runBtn.className = 'btn gold'; runBtn.textContent = '▶ اجرا کن';
-  const cancelBtn = document.createElement('button'); cancelBtn.className = 'btn'; cancelBtn.textContent = 'نه، اجرا نشه';
-  row.appendChild(runBtn); row.appendChild(cancelBtn);
-  card.appendChild(label); card.appendChild(code); card.appendChild(row); card.appendChild(out);
-  cancelBtn.addEventListener('click', () => { row.remove(); label.textContent = 'اجرا نشد.'; });
-  runBtn.addEventListener('click', async () => {
-    runBtn.disabled = true; runBtn.textContent = 'در حال اجرا…';
-    const cwd = await window.jarvis.store.get('buildFolder', '');
-    const r = await window.jarvis.exec.run({ command, cwd });
-    out.style.display = 'block';
-    out.textContent = (r.stdout || '') + (r.stderr ? '\n' + r.stderr : '') || (r.ok ? '(بدون خروجی)' : 'خطا در اجرا');
-    runBtn.textContent = r.ok ? '✓ انجام شد' : '✕ خطا داشت';
-  });
-  return card;
+async function exportAsProject(text) {
+  const parts = window.Artifact.extract(text);
+  if (!parts.length) return;
+  await window.jarvis.files.exportZip({ suggestedName: 'jarvis-project.zip', parts });
 }
 
 async function sendMessage(text) {
@@ -275,9 +231,6 @@ async function loadSettings() {
   $('webOnToggle').checked = await window.jarvis.store.get('webOn', true);
   $('speakTypedToggle').checked = await window.jarvis.store.get('speakTyped', false);
   $('wakeToggle').checked = await window.jarvis.store.get('wakeOn', false);
-  $('allowExecToggle').checked = await window.jarvis.store.get('allowExec', false);
-  $('buildFolderRow').style.display = $('allowExecToggle').checked ? 'block' : 'none';
-  $('buildFolderPath').value = await window.jarvis.store.get('buildFolder', '');
   $('humorRange').value = await window.jarvis.store.get('humor', 40);
   updateWakeHint();
   refreshDevUI(await window.jarvis.store.get('devOk', false));
@@ -292,14 +245,6 @@ $('assistantName').addEventListener('change', (e) => window.jarvis.store.set('as
 $('webOnToggle').addEventListener('change', (e) => window.jarvis.store.set('webOn', e.target.checked));
 $('speakTypedToggle').addEventListener('change', (e) => window.jarvis.store.set('speakTyped', e.target.checked));
 $('humorRange').addEventListener('change', (e) => window.jarvis.store.set('humor', Number(e.target.value)));
-$('allowExecToggle').addEventListener('change', async (e) => {
-  await window.jarvis.store.set('allowExec', e.target.checked);
-  $('buildFolderRow').style.display = e.target.checked ? 'block' : 'none';
-});
-$('pickFolderBtn').addEventListener('click', async () => {
-  const folder = await window.jarvis.files.pickFolder();
-  if (folder) { $('buildFolderPath').value = folder; await window.jarvis.store.set('buildFolder', folder); }
-});
 $('wakeToggle').addEventListener('change', async (e) => {
   await window.jarvis.store.set('wakeOn', e.target.checked);
   updateWakeHint();

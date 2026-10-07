@@ -6,23 +6,17 @@ window.Persona = (function () {
     return 'لحنت مودب، مستقیم و حرفه‌ایه.';
   }
 
-  function buildSystemPrompt({ assistantName, humor, lang, memory, allowExec }) {
+  function buildSystemPrompt({ assistantName, humor, lang, memory }) {
     const name = assistantName || 'جارویس';
     const langLine = lang === 'en'
       ? 'Reply in English unless the user writes in another language; then match their language.'
       : 'به زبانی که کاربر پیام داده جواب بده (پیش‌فرض فارسی).';
     const mem = (memory && memory.length) ? `\nچیزهایی که باید دربارهٔ کاربر به‌خاطر داشته باشی:\n- ${memory.join('\n- ')}` : '';
-    const fileLine = 'وقتی کدی می‌نویسی که باید به‌عنوان فایل ذخیره بشه، همیشه توی بلوک کد اول این خط رو بذار: // FILE: filename.ext (برای پایتون از # FILE: استفاده کن). هر فایل یه بلوک جدا.';
-    const execLine = allowExec
-      ? 'کاربر اجازه داده دستورهای ساخت/بیلد روی لپ‌تاپ خودش اجرا بشه. اگه لازم بود دستوری اجرا بشه (مثل npm install یا npm run build)، فقط یه خط به شکل دقیق RUN: <دستور> در انتهای پاسخ بنویس؛ کاربر قبل از اجرا تاییدش می‌کنه.'
-      : 'کاربر اجازه‌ی اجرای دستور روی لپ‌تاپش رو نداده؛ هیچ‌وقت خط RUN ننویس، فقط دستور رو به‌عنوان متن راهنمایی بگو.';
     return [
       `اسمت «${name}»ه، یه دستیار هوشمند روی کامپیوتر کاربر، شبیه جارویس تو آیرون‌من.`,
       humorLine(humor ?? 40),
       langLine,
       'جواب‌ها رو کوتاه و مفید نگه دار مگراینکه کاربر جزئیات بیشتر بخواد.',
-      fileLine,
-      execLine,
       mem,
     ].filter(Boolean).join('\n');
   }

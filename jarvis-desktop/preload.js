@@ -21,10 +21,7 @@ contextBridge.exposeInMainWorld('jarvis', {
     readBase64: (p) => ipcRenderer.invoke('file:readBase64', p),
     readText: (p, max) => ipcRenderer.invoke('file:readText', p, max),
     exportZip: (args) => ipcRenderer.invoke('export:zip', args),
-    saveOne: (args) => ipcRenderer.invoke('file:saveOne', args),
-    pickFolder: () => ipcRenderer.invoke('dialog:pickFolder'),
   },
-  exec: { run: (args) => ipcRenderer.invoke('exec:run', args) },
   shell: { openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url) },
   overlay: {
     show: () => ipcRenderer.invoke('overlay:show'),

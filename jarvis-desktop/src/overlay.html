@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; }
+  body { font-family: 'Vazirmatn', 'Segoe UI', Tahoma, sans-serif; }
+  .panel {
+    width: 340px; margin: 16px auto 0; padding: 16px;
+    background: #0C1320ee; border: 1px solid #0B5C6B; border-radius: 22px;
+    color: #FFE7B0; box-shadow: 0 10px 40px #000a;
+  }
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .name { color: #FFB300; font-size: 16px; font-weight: 700; }
+  .close { background: none; border: none; color: #8A94A6; font-size: 16px; cursor: pointer; }
+  .orb {
+    width: 100px; height: 100px; margin: 6px auto 10px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #FFD766, #7a4e00);
+    box-shadow: 0 0 30px #FFB30066;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  .orb.listening { animation: pulse 0.9s ease-in-out infinite; box-shadow: 0 0 40px #00E5FF88; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  .status { text-align: center; font-size: 13px; line-height: 1.7; min-height: 40px; }
+  .mic-row { display: flex; justify-content: center; margin-top: 8px; }
+  .mic-btn {
+    width: 48px; height: 48px; border-radius: 16px; background: #101A28; border: 1px solid #0B5C6B;
+    color: #FFB300; font-size: 20px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="top"><span class="name" id="ovName">جارویس</span><button class="close" id="ovClose">✕</button></div>
+    <div class="orb" id="ovOrb"></div>
+    <div class="status" id="ovStatus">آماده</div>
+    <div class="mic-row"><button class="mic-btn" id="ovMic">🎙</button></div>
+  </div>
+<script src="wake.js"></script>
+<script src="persona.js"></script>
+<script src="chatcore.js"></script>
+<script src="overlay.js"></script>
+</body>
+</html>

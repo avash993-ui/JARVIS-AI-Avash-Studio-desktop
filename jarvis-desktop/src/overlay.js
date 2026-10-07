@@ -1,5 +1,7 @@
 const ovOrb = document.getElementById('ovOrb');
 const ovStatus = document.getElementById('ovStatus');
+const ovName = document.getElementById('ovName');
+const ovMic = document.getElementById('ovMic');
 const ovClose = document.getElementById('ovClose');
 
 let recognizer = null;
@@ -135,8 +137,7 @@ function finishTurn() {
 }
 
 // ---------- UI wiring ----------
-// tap the orb itself to talk, same as saying the wake word (mirrors tapping the Siri bubble)
-ovOrb.addEventListener('click', () => {
+ovMic.addEventListener('click', () => {
   if (busy) return;
   window.jarvis.overlay.show();
   onWakeDetected();

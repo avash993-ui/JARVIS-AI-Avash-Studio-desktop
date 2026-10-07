@@ -3,7 +3,7 @@
 // code path for both in the Android app.
 window.ChatCore = (function () {
   async function loadCfg() {
-    const [base, key, model, assistantName, humor, lang, memory, devOk, allowExec] = await Promise.all([
+    const [base, key, model, assistantName, humor, lang, memory, devOk] = await Promise.all([
       window.jarvis.store.get('apiBase', ''),
       window.jarvis.store.get('apiKey', ''),
       window.jarvis.store.get('apiModel', ''),
@@ -12,9 +12,8 @@ window.ChatCore = (function () {
       window.jarvis.store.get('lang', 'fa'),
       window.jarvis.store.get('memory', []),
       window.jarvis.store.get('devOk', false),
-      window.jarvis.store.get('allowExec', false),
     ]);
-    return { base, key, model, assistantName, humor, lang, memory, devOk, allowExec };
+    return { base, key, model, assistantName, humor, lang, memory, devOk };
   }
 
   function configured(cfg) { return !!(cfg.base && cfg.model); }
