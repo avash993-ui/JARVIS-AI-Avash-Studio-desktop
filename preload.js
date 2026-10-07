@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('jarvis', {
     pickFolder: () => ipcRenderer.invoke('dialog:pickFolder'),
   },
   exec: { run: (args) => ipcRenderer.invoke('exec:run', args) },
+  os: { runAction: (args) => ipcRenderer.invoke('os:action', args) },
   shell: { openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url) },
   overlay: {
     show: () => ipcRenderer.invoke('overlay:show'),

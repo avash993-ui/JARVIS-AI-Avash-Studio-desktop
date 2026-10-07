@@ -47,15 +47,19 @@ function restartWakeRecognizer() {
   recognizer = new SpeechRecognitionCtor();
   wakeLang = wakeLang === 'fa-IR' ? 'en-US' : 'fa-IR';   // say the name in Persian or English
   recognizer.lang = wakeLang;
-  recognizer.continuous = false;
-  recognizer.interimResults = false;
+  // continuous + interim: check every partial transcript as it arrives, instead of waiting for a
+  // pause in speech. This is the single biggest lever for cutting missed wake-word detections,
+  // without adding any real build/runtime cost.
+  recognizer.continuous = true;
+  recognizer.interimResults = true;
   recognizer.onresult = (e) => {
-    const text = e.results[e.results.length - 1][0].transcript;
-    if (window.Wake.matches(text, assistantName)) {
-      stopWakeLoop();
-      onWakeDetected();
-    } else if (wakeLoopOn) {
-      setTimeout(restartWakeRecognizer, 100);
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const text = e.results[i][0].transcript;
+      if (window.Wake.matches(text, assistantName)) {
+        stopWakeLoop();
+        onWakeDetected();
+        return;
+      }
     }
   };
   recognizer.onerror = (e) => {
@@ -101,9 +105,13 @@ function listenForCommand(lang, waitSilently) {
   if (!SpeechRecognitionCtor) { finishTurn(); return; }
   const r = new SpeechRecognitionCtor();
   r.lang = lang === 'en' ? 'en-US' : 'fa-IR';
-  r.continuous = false; r.interimResults = false;
+  r.continuous = false; r.interimResults = true;
   setStatus(lang === 'en' ? 'Listening…' : 'گوش می‌دم…', true);
-  r.onresult = (e) => { handleCommand(e.results[0][0].transcript, lang); };
+  r.onresult = (e) => {
+    const last = e.results[e.results.length - 1];
+    if (last.isFinal) handleCommand(last[0].transcript, lang);
+    else setStatus(last[0].transcript, true);   // live partial transcript, feels more responsive
+  };
   r.onerror = (e) => {
     if (waitSilently && (e.error === 'no-speech' || e.error === 'aborted')) { finishTurn(); return; }
     setStatus(lang === 'en' ? "Didn't catch that." : 'نشنیدم، دوباره امتحان کن.', false);
@@ -117,10 +125,16 @@ async function handleCommand(text, lang) {
   try {
     const history = await window.jarvis.store.get('liveMessages', []);
     const answer = await window.ChatCore.ask(text, history);
+    const act = window.Actions.parseAndStrip(answer);
+    let finalText = act.clean || answer;
+    if (act.name) {
+      const r = await window.Actions.run(act.name, act.arg);
+      finalText = (finalText ? finalText + ' ' : '') + (r && r.ok ? (lang === 'en' ? 'Done.' : 'انجام شد.') : (lang === 'en' ? "Couldn't do that." : 'نتونستم انجام بدم.'));
+    }
     await window.ChatCore.appendHistory('user', text);
-    await window.ChatCore.appendHistory('assistant', answer);
-    setStatus(answer, false);
-    speak(answer, lang, finishTurn);
+    await window.ChatCore.appendHistory('assistant', finalText);
+    setStatus(finalText, false);
+    speak(finalText, lang, finishTurn);
   } catch (err) {
     setStatus((lang === 'en' ? 'Error: ' : 'خطا: ') + (err.message || err), false);
     setTimeout(finishTurn, 1800);
@@ -145,6 +159,9 @@ ovClose.addEventListener('click', () => {
   synth && synth.cancel();
   window.jarvis.overlay.hide();
 });
+
+// 100%-reliable manual trigger (Ctrl+Shift+J), in case speech recognition mis-hears the wake word
+window.jarvis.on('wake:trigger', () => { if (!busy) { window.jarvis.overlay.show(); onWakeDetected(); } });
 
 window.jarvis.on('wake:start', async () => {
   assistantName = await window.jarvis.store.get('assistantName', 'جارویس');

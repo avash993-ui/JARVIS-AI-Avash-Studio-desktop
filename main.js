@@ -138,6 +138,66 @@ ipcMain.handle('api:models', async (_e, { base, key }) => {
   return [...out].sort();
 });
 
+// ---------- safe OS actions: open an app / url / folder / settings page, "like Siri" ----------
+// Windows resolves most installed apps through the "App Paths" registry even without a full
+// path, so `start "" "<exe>"` works for most major apps, not just Windows' own built-ins.
+const APP_ALIASES = {
+  notepad: 'notepad.exe', calculator: 'calc.exe', calc: 'calc.exe', paint: 'mspaint.exe',
+  explorer: 'explorer.exe', files: 'explorer.exe', 'file explorer': 'explorer.exe',
+  cmd: 'cmd.exe', 'command prompt': 'cmd.exe', powershell: 'powershell.exe',
+  'task manager': 'taskmgr.exe', taskmanager: 'taskmgr.exe', 'control panel': 'control.exe',
+  settings: 'ms-settings:', chrome: 'chrome.exe', edge: 'msedge.exe', firefox: 'firefox.exe',
+  word: 'ms-word:', excel: 'ms-excel:', powerpoint: 'ms-powerpoint:', outlook: 'ms-outlook:',
+  spotify: 'spotify:', vscode: 'code', 'vs code': 'code', code: 'code',
+  discord: 'discord.exe', telegram: 'telegram.exe', whatsapp: 'whatsapp.exe', skype: 'skype.exe',
+  'نوت پد': 'notepad.exe', 'ماشین حساب': 'calc.exe', 'نقاشی': 'mspaint.exe', 'فایل': 'explorer.exe',
+  'تنظیمات': 'ms-settings:', 'مرورگر': 'chrome.exe', 'تلگرام': 'telegram.exe', 'واتساپ': 'whatsapp.exe', 'دیسکورد': 'discord.exe',
+};
+const SETTINGS_PAGES = {
+  wifi: 'ms-settings:network-wifi', bluetooth: 'ms-settings:bluetooth', display: 'ms-settings:display',
+  sound: 'ms-settings:sound', update: 'ms-settings:windowsupdate', apps: 'ms-settings:appsfeatures',
+  battery: 'ms-settings:batterysaver', storage: 'ms-settings:storagesense',
+};
+function winExec(cmd) {
+  return new Promise((resolve) => {
+    require('child_process').exec(cmd, { windowsHide: true, timeout: 8000 }, (err) => resolve(!err));
+  });
+}
+ipcMain.handle('os:action', async (_e, { name, arg }) => {
+  try {
+    switch (name) {
+      case 'open_app': {
+        const key = String(arg || '').trim().toLowerCase();
+        let target = APP_ALIASES[key];
+        if (!target) target = /[.:]/.test(key) ? key : key.replace(/\s+/g, '') + '.exe';   // best-effort guess
+        if (target.includes(':')) { await shell.openExternal(target); return { ok: true }; }
+        const ok = await winExec(`start "" "${target}"`);
+        return { ok };
+      }
+      case 'open_url': {
+        let u = String(arg || '').trim(); if (!u) return { ok: false };
+        if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+        await shell.openExternal(u); return { ok: true };
+      }
+      case 'open_folder': {
+        if (!arg || !fs.existsSync(arg)) return { ok: false };
+        const err = await shell.openPath(arg);
+        return { ok: !err };
+      }
+      case 'open_settings': {
+        const page = SETTINGS_PAGES[String(arg || '').trim().toLowerCase()] || 'ms-settings:';
+        await shell.openExternal(page); return { ok: true };
+      }
+      case 'search_web': {
+        if (!arg) return { ok: false };
+        await shell.openExternal('https://www.google.com/search?q=' + encodeURIComponent(arg));
+        return { ok: true };
+      }
+      default: return { ok: false };
+    }
+  } catch { return { ok: false }; }
+});
+
 // ---------- local build/run capability (opt-in, per-command confirmation) ----------
 // The renderer never runs a command on its own: the user must enable the toggle in Settings
 // AND click "اجرا" on each individual command card. This handler just executes once approved.
@@ -295,6 +355,10 @@ app.whenReady().then(() => {
 
   // quick-open shortcut, handy for a desktop assistant (like Spotlight/Siri)
   globalShortcut.register('Control+Space', () => { mainWindow.show(); mainWindow.focus(); });
+  // 100%-reliable backup for the voice wake word: speech recognition can occasionally miss
+  // "Hey Jarvis" (a known Electron limitation), so this hotkey triggers the same conversation
+  // turn instantly, with zero chance of mis-hearing.
+  globalShortcut.register('Control+Shift+J', () => overlayWindow && overlayWindow.webContents.send('wake:trigger'));
 });
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

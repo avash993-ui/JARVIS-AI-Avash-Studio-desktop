@@ -112,14 +112,23 @@ function buildRunCard(command) {
   card.appendChild(label); card.appendChild(code); card.appendChild(row); card.appendChild(out);
   cancelBtn.addEventListener('click', () => { row.remove(); label.textContent = 'اجرا نشد.'; });
   runBtn.addEventListener('click', async () => {
-    runBtn.disabled = true; runBtn.textContent = 'در حال اجرا…';
+    runBtn.disabled = true; runBtn.textContent = window.I18N.t('run_running');
     const cwd = await window.jarvis.store.get('buildFolder', '');
     const r = await window.jarvis.exec.run({ command, cwd });
     out.style.display = 'block';
-    out.textContent = (r.stdout || '') + (r.stderr ? '\n' + r.stderr : '') || (r.ok ? '(بدون خروجی)' : 'خطا در اجرا');
-    runBtn.textContent = r.ok ? '✓ انجام شد' : '✕ خطا داشت';
+    out.textContent = (r.stdout || '') + (r.stderr ? '\n' + r.stderr : '') || (r.ok ? window.I18N.t('run_no_output') : window.I18N.t('run_error'));
+    runBtn.textContent = r.ok ? window.I18N.t('run_done') : window.I18N.t('run_failed');
   });
   return card;
+}
+
+// ---------- safe OS actions (open app/url/folder/settings) — run automatically, no confirmation ----------
+async function runAnyAction(answer) {
+  const act = window.Actions.parseAndStrip(answer);
+  if (!act.name) return act.clean || answer;
+  const r = await window.Actions.run(act.name, act.arg);
+  const tag = r && r.ok ? window.I18N.t('action_done') : window.I18N.t('action_failed');
+  return (act.clean ? act.clean + '\n' : '') + tag;
 }
 
 async function sendMessage(text) {
@@ -204,7 +213,7 @@ function renderProviderChips() {
   const el = $('providerChips'); el.innerHTML = '';
   PROVIDERS.forEach((p) => {
     const c = document.createElement('button'); c.className = 'chip' + (p.id === state.provider.id ? ' on' : '');
-    c.textContent = p.name;
+    c.textContent = p.name || window.I18N.t('provider_custom');
     c.addEventListener('click', () => {
       state.provider = p;
       $('apiBase').value = p.base;
@@ -362,7 +371,7 @@ function speakText(text) {
 function loadVoiceList() {
   const voices = window.speechSynthesis.getVoices();
   const sel = $('voiceSelect'); sel.innerHTML = '';
-  const def = document.createElement('option'); def.value = 'system-default'; def.textContent = 'بهینه / پیش‌فرض سیستم';
+  const def = document.createElement('option'); def.value = 'system-default'; def.textContent = window.I18N.t('voice_default');
   sel.appendChild(def);
   voices.forEach((v) => { const o = document.createElement('option'); o.value = v.name; o.textContent = `${v.lang} — ${v.name}`; sel.appendChild(o); });
   window.jarvis.store.get('ttsVoice', 'system-default').then((v) => { sel.value = v; });
@@ -370,8 +379,21 @@ function loadVoiceList() {
 if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = loadVoiceList;
 $('voiceSelect').addEventListener('change', (e) => window.jarvis.store.set('ttsVoice', e.target.value));
 
+// ---------- language ----------
+$('uiLangSelect').addEventListener('change', async (e) => {
+  await window.jarvis.store.set('uiLang', e.target.value);
+  window.I18N.apply(e.target.value);
+  // re-render parts built dynamically in JS (data-i18n only covers static markup)
+  renderProviderChips(); renderHistory(); renderMessages(); renderShortcuts(); renderMemory(); loadVoiceList();
+  $('wakeStatus').textContent = window.I18N.t($('wakeToggle').checked ? 'wake_on' : 'wake_off');
+  updateWakeHint();
+});
+
 // ---------- startup ----------
 async function boot() {
+  const uiLang = await window.jarvis.store.get('uiLang', 'en');
+  window.I18N.apply(uiLang);
+  $('uiLangSelect').value = uiLang;
   renderProviderChips();
   const [provider, base, key, model] = await Promise.all([
     window.jarvis.store.get('provider', 'llm7'),

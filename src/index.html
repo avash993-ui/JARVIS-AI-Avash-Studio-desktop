@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <title>Jarvis</title>
@@ -8,17 +8,17 @@
 <body>
 <div class="app">
   <div class="sidebar">
-    <div class="brand"><div class="orb"></div><span>جارویس</span></div>
-    <button class="nav-item active" data-screen="chat">💬 گفتگو</button>
-    <button class="nav-item" data-screen="setup">🔌 اتصال API</button>
-    <button class="nav-item" data-screen="shortcuts">⭐ میانبرها</button>
-    <button class="nav-item" data-screen="settings">⚙️ تنظیمات</button>
+    <div class="brand"><div class="orb"></div><span data-i18n="brand">Jarvis</span></div>
+    <button class="nav-item active" data-screen="chat" data-i18n="nav_chat">💬 Chat</button>
+    <button class="nav-item" data-screen="setup" data-i18n="nav_setup">🔌 Connect API</button>
+    <button class="nav-item" data-screen="shortcuts" data-i18n="nav_shortcuts">⭐ Shortcuts</button>
+    <button class="nav-item" data-screen="settings" data-i18n="nav_settings">⚙️ Settings</button>
     <div class="spacer"></div>
-    <div class="mini" id="wakeStatus">گوش‌به‌زنگ: خاموش</div>
+    <div class="mini" id="wakeStatus" data-i18n="wake_off">Wake word: off</div>
   </div>
 
   <div class="content">
-    <div class="topbar"><h1 id="topTitle">گفتگو با جارویس</h1></div>
+    <div class="topbar"><h1 id="topTitle" data-i18n="title_chat">Chat with Jarvis</h1></div>
 
     <!-- ===== CHAT ===== -->
     <div class="screen active" id="screen-chat">
@@ -27,10 +27,10 @@
         <div class="chat-main">
           <div class="messages" id="messages"></div>
           <div class="composer">
-            <button class="icon-btn" id="attachBtn" title="پیوست فایل">📎</button>
-            <textarea id="composerInput" rows="1" placeholder="پیام بده…"></textarea>
-            <button class="icon-btn" id="micBtn" title="میکروفون">🎙</button>
-            <button class="icon-btn primary" id="sendBtn" title="ارسال">➤</button>
+            <button class="icon-btn" id="attachBtn" title="Attach file">📎</button>
+            <textarea id="composerInput" rows="1" data-i18n-ph="composer_ph" placeholder="Message…"></textarea>
+            <button class="icon-btn" id="micBtn" title="Microphone">🎙</button>
+            <button class="icon-btn primary" id="sendBtn" title="Send">➤</button>
           </div>
         </div>
       </div>
@@ -39,22 +39,22 @@
     <!-- ===== SETUP ===== -->
     <div class="screen" id="screen-setup">
       <div class="panel-scroll">
-        <p class="hint">جارویس با هر سرویس هوش مصنوعی سازگار با OpenAI کار می‌کنه. یکی رو انتخاب کن، کلیدت رو بچسبون و تست کن.</p>
-        <div class="field-label">سرویس</div>
+        <p class="hint" data-i18n="setup_intro">Jarvis works with any OpenAI-compatible AI service. Pick one, paste your key, and test it.</p>
+        <div class="field-label" data-i18n="provider">Service</div>
         <div class="chip-row" id="providerChips"></div>
-        <div class="field-label">آدرس API (تا /v1)</div>
+        <div class="field-label" data-i18n="api_base">API URL (up to /v1)</div>
         <input type="text" id="apiBase" placeholder="https://api.example.com/v1">
-        <div class="field-label">کلید API</div>
+        <div class="field-label" data-i18n="api_key">API key</div>
         <input type="password" id="apiKey" placeholder="sk-...">
-        <div class="field-label">مدل</div>
+        <div class="field-label" data-i18n="model">Model</div>
         <div class="row">
-          <input type="text" id="apiModel" placeholder="نام مدل" style="flex:1">
-          <button class="btn" id="fetchModelsBtn">گرفتن لیست مدل‌ها</button>
+          <input type="text" id="apiModel" data-i18n-ph="model_ph" placeholder="Model name" style="flex:1">
+          <button class="btn" id="fetchModelsBtn" data-i18n="fetch_models">Fetch model list</button>
         </div>
         <select id="modelList" style="margin-top:8px; display:none;"></select>
         <div class="row" style="margin-top:18px;">
-          <button class="btn outline" id="testBtn">تست اتصال</button>
-          <button class="btn gold" id="saveApiBtn">ذخیره</button>
+          <button class="btn outline" id="testBtn" data-i18n="test_conn">Test connection</button>
+          <button class="btn gold" id="saveApiBtn" data-i18n="save">Save</button>
           <span id="setupStatus"></span>
         </div>
       </div>
@@ -63,14 +63,14 @@
     <!-- ===== SHORTCUTS ===== -->
     <div class="screen" id="screen-shortcuts">
       <div class="panel-scroll">
-        <p class="hint">کامپیوتر خط تلفن نداره، پس «زنگ زدن» این‌جا یعنی باز کردن واتس‌اپ وب با همون شماره. میانبر بساز تا بگی «زنگ بزن [اسم]».</p>
-        <div class="field-label">میانبر جدید</div>
+        <p class="hint" data-i18n="shortcuts_intro">Your laptop has no phone line, so "call" here opens WhatsApp Web with that number instead. Add a shortcut so you can say "call [name]".</p>
+        <div class="field-label" data-i18n="new_shortcut">New shortcut</div>
         <div class="row">
-          <input type="text" id="shortcutAlias" placeholder="اسم (مثلاً مامان)" style="flex:1">
-          <input type="text" id="shortcutNumber" placeholder="شماره با کد کشور، مثلاً 989121234567" style="flex:1">
-          <button class="btn gold" id="addShortcutBtn">افزودن</button>
+          <input type="text" id="shortcutAlias" data-i18n-ph="alias_ph" placeholder="Name (e.g. Mom)" style="flex:1">
+          <input type="text" id="shortcutNumber" data-i18n-ph="number_ph" placeholder="Number with country code, e.g. 15551234567" style="flex:1">
+          <button class="btn gold" id="addShortcutBtn" data-i18n="add">Add</button>
         </div>
-        <div class="field-label">میانبرهای ذخیره‌شده</div>
+        <div class="field-label" data-i18n="saved_shortcuts">Saved shortcuts</div>
         <div id="shortcutList"></div>
       </div>
     </div>
@@ -78,74 +78,84 @@
     <!-- ===== SETTINGS ===== -->
     <div class="screen" id="screen-settings">
       <div class="panel-scroll">
-        <div class="field-label">نام دستیار</div>
-        <input type="text" id="assistantName" placeholder="جارویس">
+        <div class="field-label" data-i18n="language">App language</div>
+        <select id="uiLangSelect">
+          <option value="en">English</option>
+          <option value="fa">فارسی</option>
+          <option value="ar">العربية</option>
+          <option value="ru">Русский</option>
+        </select>
 
-        <div class="field-label">حالت توسعه‌دهنده</div>
+        <div class="field-label" data-i18n="assistant_name">Assistant name</div>
+        <input type="text" id="assistantName" placeholder="Jarvis">
+
+        <div class="field-label" data-i18n="dev_mode">Developer mode</div>
         <div id="devLocked">
           <div class="row">
-            <input type="password" id="devPin" placeholder="رمز توسعه‌دهنده" style="flex:1">
-            <button class="btn gold" id="devUnlockBtn">فعال</button>
+            <input type="password" id="devPin" data-i18n-ph="dev_pin_ph" placeholder="Developer PIN" style="flex:1">
+            <button class="btn gold" id="devUnlockBtn" data-i18n="unlock">Unlock</button>
           </div>
           <div class="hint status-err" id="devMsg"></div>
         </div>
         <div id="devUnlocked" style="display:none;">
-          <p class="status-ok">فعاله ✓ — میانبر نامحدود، حافظه‌ی ۵۰ مورد، جستجوی خودکار وب.</p>
-          <button class="btn outline" id="devLockBtn">غیرفعال کردن</button>
-          <div class="field-label">تغییر رمز توسعه‌دهنده</div>
+          <p class="status-ok" data-i18n="dev_on">Enabled ✓ — unlimited shortcuts, 50-item memory, auto web search.</p>
+          <button class="btn outline" id="devLockBtn" data-i18n="lock">Disable</button>
+          <div class="field-label" data-i18n="change_pin">Change developer PIN</div>
           <div class="row">
-            <input type="password" id="newDevPin" placeholder="رمز جدید" style="flex:1">
-            <button class="btn" id="changeDevPinBtn">ذخیره‌ی رمز جدید</button>
+            <input type="password" id="newDevPin" data-i18n-ph="new_pin_ph" placeholder="New PIN" style="flex:1">
+            <button class="btn" id="changeDevPinBtn" data-i18n="save_pin">Save new PIN</button>
           </div>
         </div>
 
         <div class="switch-row">
-          <span class="label">جستجوی وب برای سوال‌های تازه</span>
+          <span class="label" data-i18n="web_search">Web search for fresh questions</span>
           <label class="switch"><input type="checkbox" id="webOnToggle"><span class="slider"></span></label>
         </div>
         <div class="switch-row">
-          <span class="label">جواب‌های تایپی هم با صدا خونده بشن</span>
+          <span class="label" data-i18n="speak_typed">Speak typed answers aloud too</span>
           <label class="switch"><input type="checkbox" id="speakTypedToggle"><span class="slider"></span></label>
         </div>
         <div class="switch-row">
-          <span class="label">🎙 گوش‌به‌زنگ: با گفتن «هی جارویس» باز بشه</span>
+          <span class="label" data-i18n="wake_toggle">🎙 Wake word: open by saying "Hey Jarvis"</span>
           <label class="switch"><input type="checkbox" id="wakeToggle"><span class="slider"></span></label>
         </div>
         <p class="hint" id="wakeHint"></p>
 
         <div class="switch-row">
-          <span class="label">🛠 اجازه بده دستورهای ساخت (build) روی خود لپ‌تاپم اجرا بشه</span>
+          <span class="label" data-i18n="allow_exec">🛠 Allow build commands to run on this laptop</span>
           <label class="switch"><input type="checkbox" id="allowExecToggle"><span class="slider"></span></label>
         </div>
-        <div class="hint">هر دستور رو جارویس فقط پیشنهاد می‌ده؛ تا خودت دکمه‌ی «اجرا کن» رو نزنی، چیزی روی کامپیوترت اجرا نمیشه.</div>
+        <div class="hint" data-i18n="allow_exec_hint">Jarvis only ever suggests a command; nothing runs until you click "Run".</div>
         <div id="buildFolderRow" style="display:none; margin-top:8px;">
           <div class="row">
-            <input type="text" id="buildFolderPath" placeholder="پوشه‌ی پروژه انتخاب نشده" readonly style="flex:1">
-            <button class="btn" id="pickFolderBtn">انتخاب پوشه</button>
+            <input type="text" id="buildFolderPath" data-i18n-ph="build_folder_ph" placeholder="No project folder chosen" readonly style="flex:1">
+            <button class="btn" id="pickFolderBtn" data-i18n="pick_folder">Choose folder</button>
           </div>
         </div>
 
-        <div class="field-label">صدای خروجی (TTS)</div>
+        <div class="field-label" data-i18n="tts_voice">Output voice (TTS)</div>
         <select id="voiceSelect"></select>
 
-        <div class="field-label">میزان شوخ‌طبعی</div>
+        <div class="field-label" data-i18n="humor">Humor level</div>
         <input type="range" id="humorRange" min="0" max="100" value="40" style="width:100%;">
 
-        <div class="field-label">حافظه (چیزهایی که یادش بمونه)</div>
+        <div class="field-label" data-i18n="memory">Memory (things to remember)</div>
         <div id="memoryList"></div>
         <div class="row">
-          <input type="text" id="memoryInput" placeholder="مثلاً: اسم من آوشه" style="flex:1">
-          <button class="btn gold" id="memoryAddBtn">افزودن</button>
+          <input type="text" id="memoryInput" data-i18n-ph="memory_ph" placeholder="e.g. My name is Alex" style="flex:1">
+          <button class="btn gold" id="memoryAddBtn" data-i18n="add">Add</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<script src="i18n.js"></script>
 <script src="wake.js"></script>
 <script src="persona.js"></script>
 <script src="chatcore.js"></script>
 <script src="artifact.js"></script>
+<script src="actions.js"></script>
 <script src="renderer.js"></script>
 </body>
 </html>

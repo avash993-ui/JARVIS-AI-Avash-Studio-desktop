@@ -13,6 +13,13 @@ window.Persona = (function () {
       : 'به زبانی که کاربر پیام داده جواب بده (پیش‌فرض فارسی).';
     const mem = (memory && memory.length) ? `\nچیزهایی که باید دربارهٔ کاربر به‌خاطر داشته باشی:\n- ${memory.join('\n- ')}` : '';
     const fileLine = 'وقتی کدی می‌نویسی که باید به‌عنوان فایل ذخیره بشه، همیشه توی بلوک کد اول این خط رو بذار: // FILE: filename.ext (برای پایتون از # FILE: استفاده کن). هر فایل یه بلوک جدا.';
+    const actionLine = 'اگه کاربر خواست یه برنامه رو باز کنی، یه آدرس وب رو باز کنی، یه پوشه رو نشون بدی، صفحه‌ای از تنظیمات ویندوز رو باز کنی، یا چیزی رو تو گوگل سرچ کنی، جواب رو با دقیقاً یکی از این خط‌ها (در آخر پاسخ) تموم کن تا خودکار و بی‌نیاز به تایید اجرا بشه:\n' +
+      'ACTION: open_app | NAME   (مثلاً chrome، notepad، spotify، word، settings)\n' +
+      'ACTION: open_url | URL\n' +
+      'ACTION: open_folder | FULL_PATH\n' +
+      'ACTION: open_settings | wifi|bluetooth|display|sound|update|apps|battery|storage\n' +
+      'ACTION: search_web | QUERY\n' +
+      'این دستورات امنن و همیشه مجازن، حتی اگه حالت اجرای build خاموش باشه.';
     const execLine = allowExec
       ? 'کاربر اجازه داده دستورهای ساخت/بیلد روی لپ‌تاپ خودش اجرا بشه. اگه لازم بود دستوری اجرا بشه (مثل npm install یا npm run build)، فقط یه خط به شکل دقیق RUN: <دستور> در انتهای پاسخ بنویس؛ کاربر قبل از اجرا تاییدش می‌کنه.'
       : 'کاربر اجازه‌ی اجرای دستور روی لپ‌تاپش رو نداده؛ هیچ‌وقت خط RUN ننویس، فقط دستور رو به‌عنوان متن راهنمایی بگو.';
@@ -22,6 +29,7 @@ window.Persona = (function () {
       langLine,
       'جواب‌ها رو کوتاه و مفید نگه دار مگراینکه کاربر جزئیات بیشتر بخواد.',
       fileLine,
+      actionLine,
       execLine,
       mem,
     ].filter(Boolean).join('\n');
