@@ -1,33 +1,32 @@
 name: Build Jarvis Desktop
 
 on:
-  workflow_dispatch:
-
   push:
     branches: [main]
-    paths:
-      - 'jarvis-desktop/**'
+
+  workflow_dispatch:
 
 jobs:
   build-windows:
     runs-on: windows-latest
 
-    defaults:
-      run:
-        working-directory: jarvis-desktop
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - run: npm install
+      - name: Install dependencies
+        run: npm install
 
-      - run: npm run dist
+      - name: Build Windows
+        run: npm run dist
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
         with:
           name: jarvis-desktop-windows
-          path: jarvis-desktop/dist/*.exe
+          path: dist/*.exe
