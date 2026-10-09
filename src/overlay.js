@@ -2,13 +2,14 @@ const ovOrb = document.getElementById('ovOrb');
 const ovStatus = document.getElementById('ovStatus');
 const ovClose = document.getElementById('ovClose');
 
-let recognizer = null;
-let wakeLoopOn = false;
-let busy = false;           // mirrors Wake.busy in the Android app
-let wakeLang = 'fa-IR';     // alternates fa/en each restart, same idea as WakeService
-let consecutiveNetworkErrors = 0;
-let warnedAboutSpeechLimit = false;
+let busy = false;              // mirrors Wake.busy in the Android app
 let assistantName = 'جارویس';
+let wakeHandle = null;         // { stop() } from STT.startWakeLoop, when using Whisper
+let legacyWakeOn = false;      // when falling back to the browser's own (unreliable) recognizer
+let legacyRecognizer = null;
+let legacyLang = 'fa-IR';
+let legacyNetworkErrors = 0;
+let warnedAboutSpeechLimit = false;
 
 const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
 const synth = window.speechSynthesis;
@@ -28,96 +29,141 @@ function speak(text, lang, onDone) {
   synth.speak(u);
 }
 
-// ---------- background wake-word loop ----------
-function startWakeLoop() {
+// ========== PRIMARY PATH: real speech-to-text (Whisper via the main process) ==========
+// Needs a free Groq key pasted into Settings -> "Speech recognition key". Local voice-activity
+// detection (window.STT) means no audio is sent anywhere while the room is quiet -- only the
+// burst of speech that was actually said gets uploaded and transcribed.
+async function startWhisperWakeLoop() {
+  setStatus('گوش می‌دم…', false);
+  wakeHandle = await window.STT.startWakeLoop({
+    lang: '',
+    onHeard: (text) => {
+      if (busy) return;
+      if (window.Wake.matches(text, assistantName)) { onWakeDetected(); return; }
+      // not the wake word -- treat it as background noise/conversation and keep listening quietly
+    },
+    onError: (err) => {
+      setStatus('خطای میکروفون/STT: ' + (err && err.message || err), false);
+    },
+  });
+}
+function stopWhisperWakeLoop() {
+  if (wakeHandle) { wakeHandle.stop(); wakeHandle = null; }
+}
+
+// ========== FALLBACK PATH: Chromium's built-in recognizer ==========
+// Used only when no STT key is configured yet, so the app still does *something* out of the
+// box. It relies on a Google-owned speech backend that Electron's bundled Chromium usually
+// cannot reach, so expect it to be unreliable -- the Settings hint explains this and points at
+// the Whisper path above.
+function startLegacyWakeLoop() {
   if (!SpeechRecognitionCtor) {
-    setStatus('مرورگر این کامپیوتر از تشخیص گفتار پشتیبانی نمی‌کنه.', false);
+    setStatus('این کامپیوتر نه تشخیص گفتار مرورگر داره نه کلید STT تنظیم‌شده. برو تنظیمات.', false);
     return;
   }
-  wakeLoopOn = true;
-  restartWakeRecognizer();
+  legacyWakeOn = true;
+  restartLegacyRecognizer();
 }
-function stopWakeLoop() {
-  wakeLoopOn = false;
-  if (recognizer) { try { recognizer.abort(); } catch {} recognizer = null; }
+function stopLegacyWakeLoop() {
+  legacyWakeOn = false;
+  if (legacyRecognizer) { try { legacyRecognizer.abort(); } catch {} legacyRecognizer = null; }
 }
-function restartWakeRecognizer() {
-  if (!wakeLoopOn || busy) return;
-  if (recognizer) { try { recognizer.abort(); } catch {} }
-  recognizer = new SpeechRecognitionCtor();
-  wakeLang = wakeLang === 'fa-IR' ? 'en-US' : 'fa-IR';   // say the name in Persian or English
-  recognizer.lang = wakeLang;
-  // continuous + interim: check every partial transcript as it arrives, instead of waiting for a
-  // pause in speech. This is the single biggest lever for cutting missed wake-word detections,
-  // without adding any real build/runtime cost.
-  recognizer.continuous = true;
-  recognizer.interimResults = true;
-  recognizer.onresult = (e) => {
+function restartLegacyRecognizer() {
+  if (!legacyWakeOn || busy) return;
+  if (legacyRecognizer) { try { legacyRecognizer.abort(); } catch {} }
+  legacyRecognizer = new SpeechRecognitionCtor();
+  legacyLang = legacyLang === 'fa-IR' ? 'en-US' : 'fa-IR';
+  legacyRecognizer.lang = legacyLang;
+  legacyRecognizer.continuous = true;
+  legacyRecognizer.interimResults = true;
+  legacyRecognizer.onresult = (e) => {
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const text = e.results[i][0].transcript;
       if (window.Wake.matches(text, assistantName)) {
-        stopWakeLoop();
+        stopLegacyWakeLoop();
         onWakeDetected();
         return;
       }
     }
   };
-  recognizer.onerror = (e) => {
-    if (!wakeLoopOn) return;
-    // "no-speech" / "aborted" are NORMAL while waiting for the name: retry immediately, no backoff.
-    if (e.error === 'no-speech' || e.error === 'aborted') { setTimeout(restartWakeRecognizer, 120); return; }
-    if (e.error === 'not-allowed') { setStatus('اجازه‌ی میکروفون داده نشده.', false); wakeLoopOn = false; return; }
+  legacyRecognizer.onerror = (e) => {
+    if (!legacyWakeOn) return;
+    if (e.error === 'no-speech' || e.error === 'aborted') { setTimeout(restartLegacyRecognizer, 120); return; }
+    if (e.error === 'not-allowed') { setStatus('اجازه‌ی میکروفون داده نشده.', false); legacyWakeOn = false; return; }
     if (e.error === 'network') {
-      consecutiveNetworkErrors++;
-      // Electron's built-in Chromium lacks Google's speech-recognition backend key, so this
-      // can fail on every attempt on some machines. Don't spam retries forever in that case.
-      if (consecutiveNetworkErrors >= 5) {
+      legacyNetworkErrors++;
+      if (legacyNetworkErrors >= 5) {
         if (!warnedAboutSpeechLimit) {
           warnedAboutSpeechLimit = true;
-          setStatus('تشخیص گفتار روی این کامپیوتر در دسترس نیست (محدودیت شناخته‌شده‌ی Electron). از تایپ استفاده کن.', false);
+          setStatus('تشخیص گفتار مرورگر روی این کامپیوتر کار نمی‌کنه. تو تنظیمات یه کلید STT (رایگان، Groq) بذار تا دقیق بشه.', false);
         }
-        setTimeout(restartWakeRecognizer, 15000);
+        setTimeout(restartLegacyRecognizer, 15000);
         return;
       }
     }
-    setTimeout(restartWakeRecognizer, 800);
+    setTimeout(restartLegacyRecognizer, 800);
   };
-  recognizer.onend = () => { if (wakeLoopOn) setTimeout(restartWakeRecognizer, 100); };
-  try { recognizer.start(); consecutiveNetworkErrors = 0; } catch { setTimeout(restartWakeRecognizer, 500); }
+  legacyRecognizer.onend = () => { if (legacyWakeOn) setTimeout(restartLegacyRecognizer, 100); };
+  try { legacyRecognizer.start(); legacyNetworkErrors = 0; } catch { setTimeout(restartLegacyRecognizer, 500); }
+}
+
+// ========== shared entry points ==========
+async function startWakeLoop() {
+  if (await window.STT.sttKeyConfigured()) await startWhisperWakeLoop();
+  else startLegacyWakeLoop();
+}
+function stopWakeLoop() {
+  stopWhisperWakeLoop();
+  stopLegacyWakeLoop();
 }
 
 // ---------- the actual conversation turn, after the name was heard ----------
 async function onWakeDetected() {
   busy = true;
+  stopLegacyWakeLoop(); // whisper loop pauses itself naturally (listenForCommand reuses the same mic graph)
   await window.jarvis.overlay.show();
-  const lang = wakeLang === 'en-US' ? 'en' : 'fa';
+  const lang = legacyLang === 'en-US' ? 'en' : 'fa';
   const hello = lang === 'en' ? 'Yes?' : 'بله؟';
   setStatus(hello, false);
-  speak(hello, lang, () => listenForCommand(lang, true));
-  // safety net: never stay silent forever even if TTS callback never fires
-  setTimeout(() => listenForCommand(lang, true), 2500);
+  speak(hello, lang, () => listenForCommand(lang));
+  setTimeout(() => listenForCommand(lang), 2500); // safety net if TTS's onend never fires
 }
 
 let commandStarted = false;
-function listenForCommand(lang, waitSilently) {
+async function listenForCommand(lang) {
   if (commandStarted) return;
   commandStarted = true;
-  if (!SpeechRecognitionCtor) { finishTurn(); return; }
-  const r = new SpeechRecognitionCtor();
-  r.lang = lang === 'en' ? 'en-US' : 'fa-IR';
-  r.continuous = false; r.interimResults = true;
   setStatus(lang === 'en' ? 'Listening…' : 'گوش می‌دم…', true);
-  r.onresult = (e) => {
-    const last = e.results[e.results.length - 1];
-    if (last.isFinal) handleCommand(last[0].transcript, lang);
-    else setStatus(last[0].transcript, true);   // live partial transcript, feels more responsive
-  };
-  r.onerror = (e) => {
-    if (waitSilently && (e.error === 'no-speech' || e.error === 'aborted')) { finishTurn(); return; }
-    setStatus(lang === 'en' ? "Didn't catch that." : 'نشنیدم، دوباره امتحان کن.', false);
-    setTimeout(finishTurn, 1500);
-  };
-  try { r.start(); } catch { finishTurn(); }
+  try {
+    let text = '';
+    if (await window.STT.sttKeyConfigured()) {
+      text = await window.STT.listenOnce({
+        lang: lang === 'en' ? 'en' : 'fa',
+        onThinking: () => setStatus(lang === 'en' ? 'Thinking…' : 'در حال فهمیدن…', false),
+      });
+    } else if (SpeechRecognitionCtor) {
+      text = await legacyListenOnce(lang);
+    }
+    if (!text) { finishTurn(); return; }
+    await handleCommand(text, lang);
+  } catch (err) {
+    setStatus((lang === 'en' ? 'Error: ' : 'خطا: ') + (err.message || err), false);
+    setTimeout(finishTurn, 1800);
+  }
+}
+function legacyListenOnce(lang) {
+  return new Promise((resolve) => {
+    const r = new SpeechRecognitionCtor();
+    r.lang = lang === 'en' ? 'en-US' : 'fa-IR';
+    r.continuous = false; r.interimResults = true;
+    r.onresult = (e) => {
+      const last = e.results[e.results.length - 1];
+      if (last.isFinal) resolve(last[0].transcript);
+      else setStatus(last[0].transcript, true);
+    };
+    r.onerror = () => resolve('');
+    try { r.start(); } catch { resolve(''); }
+  });
 }
 
 async function handleCommand(text, lang) {
@@ -144,8 +190,11 @@ async function handleCommand(text, lang) {
 function finishTurn() {
   commandStarted = false;
   busy = false;
-  // window.jarvis.overlay.show() left it visible with a close button — resume the wake loop quietly.
-  if (wakeLoopOn) setTimeout(restartWakeRecognizer, 400);
+  // window.jarvis.overlay.show() left it visible with a close button -- resume the wake loop quietly.
+  setTimeout(async () => {
+    if (await window.STT.sttKeyConfigured()) { if (!wakeHandle) await startWhisperWakeLoop(); }
+    else if (legacyWakeOn) restartLegacyRecognizer();
+  }, 400);
 }
 
 // ---------- UI wiring ----------
@@ -160,12 +209,12 @@ ovClose.addEventListener('click', () => {
   window.jarvis.overlay.hide();
 });
 
-// 100%-reliable manual trigger (Ctrl+Shift+J), in case speech recognition mis-hears the wake word
+// 100%-reliable manual trigger (Ctrl+Shift+J), in case the wake word itself gets missed
 window.jarvis.on('wake:trigger', () => { if (!busy) { window.jarvis.overlay.show(); onWakeDetected(); } });
 
 window.jarvis.on('wake:start', async () => {
   assistantName = await window.jarvis.store.get('assistantName', 'جارویس');
-  startWakeLoop();
+  await startWakeLoop();
 });
 window.jarvis.on('wake:stop', () => { stopWakeLoop(); window.jarvis.overlay.hide(); });
 

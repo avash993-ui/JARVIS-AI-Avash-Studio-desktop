@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('jarvis', {
     analyze: (cfg) => ipcRenderer.invoke('api:analyze', cfg),
     test: (cfg) => ipcRenderer.invoke('api:test', cfg),
     models: (cfg) => ipcRenderer.invoke('api:models', cfg),
+    transcribe: (cfg) => ipcRenderer.invoke('api:transcribe', cfg),
   },
   files: {
     openPicker: () => ipcRenderer.invoke('dialog:openFiles'),

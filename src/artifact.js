@@ -18,5 +18,20 @@ window.Artifact = (function () {
     block.lastIndex = 0;
     return out;
   }
-  return { extract };
+
+  // ---------- ```chart fenced JSON block -> drawn inline as a small bar/line chart ----------
+  // Expected shape: {"type":"bar"|"line","title":"...","labels":["a","b"],"values":[1,2]}
+  const chartBlock = /```chart\s*\n([\s\S]*?)```/i;
+  function extractChart(text) {
+    const m = chartBlock.exec(text);
+    if (!m) return null;
+    try {
+      const spec = JSON.parse(m[1]);
+      if (!Array.isArray(spec.values) || !spec.values.length) return null;
+      return spec;
+    } catch { return null; }
+  }
+  function stripChart(text) { return text.replace(chartBlock, '').trim(); }
+
+  return { extract, extractChart, stripChart };
 })();

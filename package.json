@@ -22,6 +22,7 @@
       "src/**/*",
       "assets/**/*"
     ],
+    "icon": "assets/icon.png",
     "win": {
       "target": "nsis"
     },

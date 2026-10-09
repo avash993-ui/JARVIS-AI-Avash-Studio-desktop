@@ -84,17 +84,27 @@ async function apiGet(base, path, key) {
 }
 
 ipcMain.handle('api:chat', async (_e, { base, key, model, messages, maxTokens }) => {
-  let budget = maxTokens || 380;
+  // Reasoning models (o-series, DeepSeek-R1, Claude extended-thinking, etc.) spend tokens on an
+  // internal "thinking" pass before writing the visible reply. The old 380-token budget was
+  // entirely consumed by that thinking pass on such models, leaving nothing for the actual
+  // answer -> empty content -> the "پاسخ خالی بود" error. Start much higher and retry further up.
+  let budget = maxTokens || 1200;
   let text = '';
-  for (let attempt = 0; attempt < 2; attempt++) {
+  let lastJson = null;
+  for (let attempt = 0; attempt < 4; attempt++) {
     const j = await apiPost(base, '/chat/completions', key, {
       model, messages, max_tokens: budget, temperature: 0.6,
     });
+    lastJson = j;
     text = (j.choices?.[0]?.message?.content || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     if (text) break;
-    budget = Math.min(budget * 6, 4000);
+    budget = Math.min(budget * 3, 16000);
   }
-  if (!text) throw new Error('پاسخ خالی بود (ممکنه مدل reasoning باشه؛ مدل دیگه‌ای امتحان کن)');
+  if (!text) {
+    const finish = lastJson?.choices?.[0]?.finish_reason;
+    const extra = finish === 'length' ? ' — finish_reason: length (مدل کل توکن‌ها رو صرف «فکر کردن» کرد)' : '';
+    throw new Error('پاسخ خالی بود (ممکنه مدل reasoning باشه؛ مدل دیگه‌ای امتحان کن)' + extra);
+  }
   return text;
 });
 
@@ -136,6 +146,33 @@ ipcMain.handle('api:models', async (_e, { base, key }) => {
     if (id) out.add(String(id).replace(/^models\//, ''));
   }
   return [...out].sort();
+});
+
+// ---------- speech-to-text (Groq's Whisper endpoint): replaces Chromium's built-in speech
+// recognition, which needs a Google-owned API key that Electron's bundled Chromium doesn't
+// ship with, so it silently fails on most machines. This hits a real cloud model instead,
+// using the same kind of API key the user already pastes in on the "Connect API" screen. ----------
+ipcMain.handle('api:transcribe', async (_e, { key, base64, mime, lang }) => {
+  if (!key) throw new Error('کلید تشخیص گفتار (STT) تنظیم نشده');
+  const buf = Buffer.from(base64, 'base64');
+  const form = new FormData();
+  form.append('file', new Blob([buf], { type: mime || 'audio/webm' }), 'audio.webm');
+  form.append('model', 'whisper-large-v3-turbo');
+  if (lang) form.append('language', lang);
+  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + cleanKey(key) },
+    body: form,
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = text.slice(0, 200);
+    try { const j = JSON.parse(text); msg = (j.error && (j.error.message || j.error)) || msg; } catch {}
+    const hint = { 401: ' (کلید STT نامعتبر)', 403: ' (کلید STT نامعتبر)', 429: ' (سقف درخواست STT)' }[res.status] || '';
+    throw new Error(`HTTP ${res.status}${hint}: ${msg}`);
+  }
+  const j = JSON.parse(text);
+  return (j.text || '').trim();
 });
 
 // ---------- safe OS actions: open an app / url / folder / settings page, "like Siri" ----------

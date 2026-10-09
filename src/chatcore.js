@@ -28,7 +28,7 @@ window.ChatCore = (function () {
     messages.push({ role: 'user', content: question });
     const answer = await window.jarvis.api.chat({
       base: cfg.base, key: cfg.key, model: cfg.model, messages,
-      maxTokens: cfg.devOk ? 600 : 380,
+      maxTokens: cfg.devOk ? 2200 : 1200,
     });
     return answer;
   }

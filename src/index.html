@@ -11,7 +11,6 @@
     <div class="brand"><div class="orb"></div><span data-i18n="brand">Jarvis</span></div>
     <button class="nav-item active" data-screen="chat" data-i18n="nav_chat">💬 Chat</button>
     <button class="nav-item" data-screen="setup" data-i18n="nav_setup">🔌 Connect API</button>
-    <button class="nav-item" data-screen="shortcuts" data-i18n="nav_shortcuts">⭐ Shortcuts</button>
     <button class="nav-item" data-screen="settings" data-i18n="nav_settings">⚙️ Settings</button>
     <div class="spacer"></div>
     <div class="mini" id="wakeStatus" data-i18n="wake_off">Wake word: off</div>
@@ -60,21 +59,6 @@
       </div>
     </div>
 
-    <!-- ===== SHORTCUTS ===== -->
-    <div class="screen" id="screen-shortcuts">
-      <div class="panel-scroll">
-        <p class="hint" data-i18n="shortcuts_intro">Your laptop has no phone line, so "call" here opens WhatsApp Web with that number instead. Add a shortcut so you can say "call [name]".</p>
-        <div class="field-label" data-i18n="new_shortcut">New shortcut</div>
-        <div class="row">
-          <input type="text" id="shortcutAlias" data-i18n-ph="alias_ph" placeholder="Name (e.g. Mom)" style="flex:1">
-          <input type="text" id="shortcutNumber" data-i18n-ph="number_ph" placeholder="Number with country code, e.g. 15551234567" style="flex:1">
-          <button class="btn gold" id="addShortcutBtn" data-i18n="add">Add</button>
-        </div>
-        <div class="field-label" data-i18n="saved_shortcuts">Saved shortcuts</div>
-        <div id="shortcutList"></div>
-      </div>
-    </div>
-
     <!-- ===== SETTINGS ===== -->
     <div class="screen" id="screen-settings">
       <div class="panel-scroll">
@@ -98,7 +82,7 @@
           <div class="hint status-err" id="devMsg"></div>
         </div>
         <div id="devUnlocked" style="display:none;">
-          <p class="status-ok" data-i18n="dev_on">Enabled ✓ — unlimited shortcuts, 50-item memory, auto web search.</p>
+          <p class="status-ok" data-i18n="dev_on">Enabled ✓ — 50-item memory, auto web search.</p>
           <button class="btn outline" id="devLockBtn" data-i18n="lock">Disable</button>
           <div class="field-label" data-i18n="change_pin">Change developer PIN</div>
           <div class="row">
@@ -115,6 +99,10 @@
           <span class="label" data-i18n="speak_typed">Speak typed answers aloud too</span>
           <label class="switch"><input type="checkbox" id="speakTypedToggle"><span class="slider"></span></label>
         </div>
+        <div class="field-label" data-i18n="stt_key">Speech recognition key (free, from console.groq.com)</div>
+        <input type="password" id="sttKey" placeholder="gsk_...">
+        <p class="hint" data-i18n="stt_key_hint">Without this, voice recognition falls back to the browser's built-in engine, which rarely works inside Electron. With it, Jarvis sends only the burst of speech it detects to Whisper for accurate transcription — nothing is sent while the room is quiet.</p>
+
         <div class="switch-row">
           <span class="label" data-i18n="wake_toggle">🎙 Wake word: open by saying "Hey Jarvis"</span>
           <label class="switch"><input type="checkbox" id="wakeToggle"><span class="slider"></span></label>
@@ -151,6 +139,7 @@
 </div>
 
 <script src="i18n.js"></script>
+<script src="stt.js"></script>
 <script src="wake.js"></script>
 <script src="persona.js"></script>
 <script src="chatcore.js"></script>
