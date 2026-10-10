@@ -6,7 +6,7 @@ const PROVIDERS = [
   { id: 'deepseek', name: 'DeepSeek', base: 'https://api.deepseek.com/v1', models: ['deepseek-chat', 'deepseek-reasoner'] },
   { id: 'gemini', name: 'Gemini', base: 'https://generativelanguage.googleapis.com/v1beta/openai', models: ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'] },
   { id: 'groq', name: 'Groq', base: 'https://api.groq.com/openai/v1', models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'openai/gpt-oss-20b'] },
-  { id: 'custom', name: 'دلخواه', base: '', models: [] },
+  { id: 'custom', name: '', base: '', models: [] },
 ];
 
 let state = {
@@ -26,14 +26,14 @@ function switchScreen(name) {
   document.querySelectorAll('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.screen === name));
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === 'screen-' + name));
   $('topTitle').textContent = {
-    chat: 'گفتگو با جارویس', setup: 'اتصال به هوش مصنوعی', settings: 'تنظیمات',
+    chat: window.I18N.t('title_chat'), setup: window.I18N.t('title_setup'), settings: window.I18N.t('title_settings'),
   }[name];
 }
 
 // ---------- chat ----------
 function activeConvo() { return state.convos.find((c) => c.id === state.activeConvoId); }
 function newConvo() {
-  const c = { id: Date.now(), title: 'گفتگوی جدید', msgs: [] };
+  const c = { id: Date.now(), title: window.I18N.t('new_chat_title'), msgs: [] };
   state.convos.unshift(c); state.activeConvoId = c.id;
   renderHistory(); renderMessages();
 }
@@ -41,7 +41,7 @@ function renderHistory() {
   const el = $('historyPanel');
   el.innerHTML = '';
   const newBtn = document.createElement('button');
-  newBtn.textContent = '+ گفتگوی جدید'; newBtn.style.color = '#FFB300';
+  newBtn.textContent = window.I18N.t('new_chat'); newBtn.style.color = '#FFB300';
   newBtn.addEventListener('click', newConvo);
   el.appendChild(newBtn);
   state.convos.forEach((c) => {
@@ -151,14 +151,14 @@ function buildFileCards(parts) {
     const card = document.createElement('div'); card.className = 'file-card';
     const icon = document.createElement('span'); icon.className = 'file-icon'; icon.textContent = iconFor(extOf(p.name));
     const name = document.createElement('span'); name.className = 'file-name'; name.textContent = p.name;
-    const dl = document.createElement('button'); dl.className = 'btn file-dl'; dl.textContent = '⬇ دانلود';
+    const dl = document.createElement('button'); dl.className = 'btn file-dl'; dl.textContent = window.I18N.t('download');
     dl.addEventListener('click', () => window.jarvis.files.saveOne({ suggestedName: p.name, content: p.body }));
     card.appendChild(icon); card.appendChild(name); card.appendChild(dl);
     wrap.appendChild(card);
   });
   if (parts.length > 1) {
     const allBtn = document.createElement('button'); allBtn.className = 'btn gold'; allBtn.style.marginTop = '6px';
-    allBtn.textContent = '📦 دانلود همه (zip)';
+    allBtn.textContent = window.I18N.t('download_all');
     allBtn.addEventListener('click', () => window.jarvis.files.exportZip({ suggestedName: 'jarvis-project.zip', parts }));
     wrap.appendChild(allBtn);
   }
@@ -171,15 +171,15 @@ function parseRunCommand(text) { const m = runLineRe.exec(text); return m ? m[1]
 function stripRunLine(text) { return text.replace(runLineRe, '').trim(); }
 function buildRunCard(command) {
   const card = document.createElement('div'); card.className = 'run-card';
-  const label = document.createElement('div'); label.className = 'run-label'; label.textContent = 'پیشنهاد اجرای دستور روی لپ‌تاپت:';
+  const label = document.createElement('div'); label.className = 'run-label'; label.textContent = window.I18N.t('run_suggest');
   const code = document.createElement('code'); code.className = 'run-cmd'; code.textContent = command;
   const out = document.createElement('pre'); out.className = 'run-out'; out.style.display = 'none';
   const row = document.createElement('div'); row.className = 'row';
-  const runBtn = document.createElement('button'); runBtn.className = 'btn gold'; runBtn.textContent = '▶ اجرا کن';
-  const cancelBtn = document.createElement('button'); cancelBtn.className = 'btn'; cancelBtn.textContent = 'نه، اجرا نشه';
+  const runBtn = document.createElement('button'); runBtn.className = 'btn gold'; runBtn.textContent = window.I18N.t('run_btn');
+  const cancelBtn = document.createElement('button'); cancelBtn.className = 'btn'; cancelBtn.textContent = window.I18N.t('run_cancel');
   row.appendChild(runBtn); row.appendChild(cancelBtn);
   card.appendChild(label); card.appendChild(code); card.appendChild(row); card.appendChild(out);
-  cancelBtn.addEventListener('click', () => { row.remove(); label.textContent = 'اجرا نشد.'; });
+  cancelBtn.addEventListener('click', () => { row.remove(); label.textContent = window.I18N.t('run_not_executed'); });
   runBtn.addEventListener('click', async () => {
     runBtn.disabled = true; runBtn.textContent = window.I18N.t('run_running');
     const cwd = await window.jarvis.store.get('buildFolder', '');
@@ -216,7 +216,7 @@ async function sendMessage(text) {
     const speakTyped = await window.jarvis.store.get('speakTyped', false);
     if (speakTyped) speakText(answer);
   } catch (err) {
-    c.msgs[c.msgs.length - 1] = { role: 'assistant', text: 'خطا: ' + (err.message || err) };
+    c.msgs[c.msgs.length - 1] = { role: 'assistant', text: window.I18N.t('error_prefix') + (err.message || err) };
   }
   renderMessages();
   persistConvos();
@@ -247,7 +247,7 @@ $('micBtn').addEventListener('click', async () => {
     micOn = false; $('micBtn').classList.remove('active'); $('micBtn').textContent = '🎙';
     return;
   }
-  if (!SpeechRecognitionCtor) { alert('مرورگر این کامپیوتر از تشخیص گفتار پشتیبانی نمی‌کنه. تو تنظیمات یه کلید STT بذار.'); return; }
+  if (!SpeechRecognitionCtor) { alert(window.I18N.t('err_stt_unsupported')); return; }
   micRecognizer = new SpeechRecognitionCtor();
   micRecognizer.lang = 'fa-IR';
   micRecognizer.onstart = () => { micOn = true; $('micBtn').classList.add('active'); };
@@ -278,14 +278,14 @@ $('attachBtn').addEventListener('click', async () => {
       }
     }
     const cfg = await window.ChatCore.loadCfg();
-    if (!window.ChatCore.configured(cfg)) throw new Error('اول باید یه هوش مصنوعی (API) وصل کنی.');
+    if (!window.ChatCore.configured(cfg)) throw new Error(window.I18N.t('err_connect_first'));
     const prompt = 'Answer in the user\'s language. Analyze the attached files carefully.\n\n' +
       payloads.map((p, i) => `--- Attachment ${i + 1} ---\n${p.text}`).join('\n\n');
     const images = payloads.filter((p) => p.image).map((p) => p.image);
     const answer = await window.jarvis.api.analyze({ base: cfg.base, key: cfg.key, model: cfg.model, text: prompt, images, maxTokens: cfg.devOk ? 1400 : 900 });
     c.msgs[c.msgs.length - 1] = { role: 'assistant', text: answer };
   } catch (err) {
-    c.msgs[c.msgs.length - 1] = { role: 'assistant', text: 'خطا: ' + (err.message || err) };
+    c.msgs[c.msgs.length - 1] = { role: 'assistant', text: window.I18N.t('error_prefix') + (err.message || err) };
   }
   renderMessages(); persistConvos();
 });
@@ -312,14 +312,14 @@ $('fetchModelsBtn').addEventListener('click', async () => {
     const sel = $('modelList'); sel.innerHTML = ''; sel.style.display = 'block';
     models.forEach((m) => { const o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o); });
     sel.onchange = () => { $('apiModel').value = sel.value; };
-    $('setupStatus').textContent = `${models.length} مدل پیدا شد`; $('setupStatus').className = 'status-ok';
+    $('setupStatus').textContent = window.I18N.tf('models_found', { n: models.length }); $('setupStatus').className = 'status-ok';
   } catch (err) { $('setupStatus').textContent = err.message; $('setupStatus').className = 'status-err'; }
 });
 $('testBtn').addEventListener('click', async () => {
-  $('setupStatus').textContent = 'در حال تست…'; $('setupStatus').className = '';
+  $('setupStatus').textContent = window.I18N.t('status_testing'); $('setupStatus').className = '';
   try {
     await window.jarvis.api.test({ base: $('apiBase').value, key: $('apiKey').value, model: $('apiModel').value });
-    $('setupStatus').textContent = 'وصل شد ✓'; $('setupStatus').className = 'status-ok';
+    $('setupStatus').textContent = window.I18N.t('status_ok'); $('setupStatus').className = 'status-ok';
   } catch (err) { $('setupStatus').textContent = err.message; $('setupStatus').className = 'status-err'; }
 });
 $('saveApiBtn').addEventListener('click', async () => {
@@ -327,7 +327,7 @@ $('saveApiBtn').addEventListener('click', async () => {
   await window.jarvis.store.set('apiBase', $('apiBase').value.trim());
   await window.jarvis.store.set('apiKey', $('apiKey').value.trim());
   await window.jarvis.store.set('apiModel', $('apiModel').value.trim());
-  $('setupStatus').textContent = 'ذخیره شد ✓'; $('setupStatus').className = 'status-ok';
+  $('setupStatus').textContent = window.I18N.t('status_saved'); $('setupStatus').className = 'status-ok';
   switchScreen('chat');
 });
 
@@ -349,8 +349,8 @@ async function loadSettings() {
 function updateWakeHint() {
   if (!$('wakeToggle').checked) { $('wakeHint').textContent = ''; return; }
   $('wakeHint').textContent = $('sttKey').value.trim()
-    ? 'جارویس با Whisper توی پس‌زمینه گوش می‌ده؛ فقط وقتی صدایی هست چیزی آپلود می‌شه.'
-    : 'یه کلید STT بالا نذاشتی، پس روی تشخیص گفتار خودِ مرورگر می‌افته که معمولاً تو Electron کار نمی‌کنه.';
+    ? window.I18N.t('wake_hint_stt_on')
+    : window.I18N.t('wake_hint_stt_off');
 }
 $('assistantName').addEventListener('change', (e) => window.jarvis.store.set('assistantName', e.target.value.slice(0, 20)));
 $('sttKey').addEventListener('change', (e) => { window.jarvis.store.set('sttKey', e.target.value.trim()); updateWakeHint(); });
@@ -369,7 +369,7 @@ $('wakeToggle').addEventListener('change', async (e) => {
   await window.jarvis.store.set('wakeOn', e.target.checked);
   updateWakeHint();
   await window.jarvis.tray.setWakeState(e.target.checked);
-  $('wakeStatus').textContent = 'گوش‌به‌زنگ: ' + (e.target.checked ? 'روشن' : 'خاموش');
+  $('wakeStatus').textContent = window.I18N.t(e.target.checked ? 'wake_on' : 'wake_off');
   if (e.target.checked) await window.jarvis.overlay.startWake(); else await window.jarvis.overlay.stopWake();
 });
 
@@ -380,7 +380,7 @@ function refreshDevUI(on) {
 $('devUnlockBtn').addEventListener('click', async () => {
   const ok = await window.jarvis.dev.verify($('devPin').value);
   if (ok) { await window.jarvis.store.set('devOk', true); $('devPin').value = ''; $('devMsg').textContent = ''; refreshDevUI(true); }
-  else $('devMsg').textContent = 'رمز اشتباه است.';
+  else $('devMsg').textContent = window.I18N.t('status_wrong_pin');
 });
 $('devLockBtn').addEventListener('click', async () => { await window.jarvis.store.set('devOk', false); refreshDevUI(false); });
 $('changeDevPinBtn').addEventListener('click', async () => {
@@ -388,7 +388,7 @@ $('changeDevPinBtn').addEventListener('click', async () => {
   if (!v) return;
   await window.jarvis.dev.setPin(v);
   $('newDevPin').value = '';
-  $('devMsg').style.color = '#4EE06A'; $('devMsg').textContent = 'رمز جدید ذخیره شد ✓';
+  $('devMsg').style.color = '#4EE06A'; $('devMsg').textContent = window.I18N.t('status_pin_saved');
 });
 
 function renderMemory() {
@@ -407,7 +407,7 @@ $('memoryAddBtn').addEventListener('click', async () => {
   const v = $('memoryInput').value.trim(); if (!v) return;
   const devOk = await window.jarvis.store.get('devOk', false);
   const memory = await window.jarvis.store.get('memory', []);
-  if (memory.length >= (devOk ? 50 : 5)) { alert('حافظه پره (نسخه‌ی دمو ۵ مورد).'); return; }
+  if (memory.length >= (devOk ? 50 : 5)) { alert(window.I18N.t('memory_full')); return; }
   memory.push(v); await window.jarvis.store.set('memory', memory);
   $('memoryInput').value = ''; renderMemory();
 });
@@ -441,13 +441,15 @@ $('uiLangSelect').addEventListener('change', async (e) => {
   window.I18N.apply(e.target.value);
   // re-render parts built dynamically in JS (data-i18n only covers static markup)
   renderProviderChips(); renderHistory(); renderMessages(); renderMemory(); loadVoiceList();
+  const act = document.querySelector('.nav-item.active'); if (act) switchScreen(act.dataset.screen);
   $('wakeStatus').textContent = window.I18N.t($('wakeToggle').checked ? 'wake_on' : 'wake_off');
   updateWakeHint();
 });
 
 // ---------- startup ----------
 async function boot() {
-  const uiLang = await window.jarvis.store.get('uiLang', 'en');
+  let uiLang = await window.jarvis.store.get('uiLang', null);
+  if (!uiLang) { uiLang = window.I18N.detect(); await window.jarvis.store.set('uiLang', uiLang); }
   window.I18N.apply(uiLang);
   $('uiLangSelect').value = uiLang;
   renderProviderChips();
@@ -468,7 +470,7 @@ async function boot() {
   loadVoiceList();
 
   const wakeOn = await window.jarvis.store.get('wakeOn', false);
-  $('wakeStatus').textContent = 'گوش‌به‌زنگ: ' + (wakeOn ? 'روشن' : 'خاموش');
+  $('wakeStatus').textContent = window.I18N.t(wakeOn ? 'wake_on' : 'wake_off');
   await window.jarvis.tray.setWakeState(wakeOn);
   if (wakeOn) window.jarvis.overlay.startWake();
 

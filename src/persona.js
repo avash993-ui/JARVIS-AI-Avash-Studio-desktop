@@ -8,9 +8,8 @@ window.Persona = (function () {
 
   function buildSystemPrompt({ assistantName, humor, lang, memory, allowExec }) {
     const name = assistantName || 'جارویس';
-    const langLine = lang === 'en'
-      ? 'Reply in English unless the user writes in another language; then match their language.'
-      : 'به زبانی که کاربر پیام داده جواب بده (پیش‌فرض فارسی).';
+    const LANG_NAMES = { en: 'English', fa: 'Persian (Farsi)', ar: 'Arabic', ru: 'Russian' };
+    const langLine = `Reply in ${LANG_NAMES[lang] || 'English'} by default; if the user writes in another language, answer in that language instead.`;
     const mem = (memory && memory.length) ? `\nچیزهایی که باید دربارهٔ کاربر به‌خاطر داشته باشی:\n- ${memory.join('\n- ')}` : '';
     const fileLine = 'وقتی کدی می‌نویسی که باید به‌عنوان فایل ذخیره بشه، همیشه توی بلوک کد اول این خط رو بذار: // FILE: filename.ext (برای پایتون از # FILE: استفاده کن). هر فایل یه بلوک جدا.';
     const chartLine = 'اگه کاربر درخواست نمودار یا مقایسه‌ی عددی کرد (مثلاً "نموداری از X نشون بده")، یه بلوک کد با زبان chart بنویس که فقط یه JSON خام داخلش باشه، دقیقاً به این شکل، و توی متن دوباره همون اعداد رو تکرار نکن:\n' +

@@ -29,6 +29,29 @@ window.I18N = (function () {
       download: '⬇ Download', download_all: '📦 Download all (zip)',
       err_connect_first: 'Connect an AI service first.', err_no_mic: 'This computer has no speech recognition support.',
       action_done: '(done)', action_failed: "(couldn't do that)",
+      models_found: "{n} models found",
+      run_not_executed: "Not executed.",
+      new_chat_title: "New chat",
+      wake_hint_stt_on: "Jarvis listens in the background with Whisper; audio is uploaded only while someone is speaking.",
+      wake_hint_stt_off: "No STT key is set above, so it falls back to the browser's own speech recognition, which usually doesn't work inside Electron.",
+      err_stt_unsupported: "This computer's browser has no speech recognition. Add an STT key in Settings.",
+      ov_ready: "Ready",
+      ov_listening: "Listening…",
+      ov_thinking: "Thinking…",
+      ov_yes: "Yes?",
+      ov_done: "Done.",
+      ov_failed: "Couldn't do that.",
+      ov_mic_error: "Microphone/STT error: ",
+      ov_no_engine: "No speech recognition here and no STT key set. Open Settings.",
+      ov_mic_denied: "Microphone permission was denied.",
+      ov_browser_stt_broken: "The browser's speech recognition doesn't work on this computer. Add a free STT key (Groq) in Settings.",
+      terms_title: "Terms of use & support",
+      terms_body: "By using Jarvis you agree to the following:\n1. The software is provided \"as is\", with no guarantee of error-free operation.\n2. Jarvis is independent from any AI provider. You enter your own API key and you are responsible for that service's costs and terms.\n3. Your settings, chats and API keys are stored only on this computer and are never sent to any Avash Studio server.\n4. System commands (\"Run\") only execute after your explicit confirmation, every time.\n5. Do not use this software for anything unlawful.\n6. The software is under active development and you may run into issues.",
+      bug_contact: "Found a bug? Please write to avash993@gmail.com",
+      tray_open: "Open Jarvis",
+      tray_wake_on: "Turn wake word on",
+      tray_wake_off: "Turn wake word off",
+      tray_quit: "Quit",
     },
     fa: {
       error_prefix: 'خطا: ', attached_files: 'فایل‌ها: ', memory_full: 'حافظه پره (نسخه‌ی دمو ۵ مورد).', provider_custom: 'دلخواه',
@@ -59,6 +82,29 @@ window.I18N = (function () {
       download: '⬇ دانلود', download_all: '📦 دانلود همه (zip)',
       err_connect_first: 'اول باید یه هوش مصنوعی (API) وصل کنی.', err_no_mic: 'این کامپیوتر از تشخیص گفتار پشتیبانی نمی‌کنه.',
       action_done: '(انجام شد)', action_failed: '(نتونستم انجام بدم)',
+      models_found: "{n} مدل پیدا شد",
+      run_not_executed: "اجرا نشد.",
+      new_chat_title: "گفتگوی جدید",
+      wake_hint_stt_on: "جارویس با Whisper توی پس‌زمینه گوش می‌ده؛ فقط وقتی صدایی هست چیزی آپلود می‌شه.",
+      wake_hint_stt_off: "یه کلید STT بالا نذاشتی، پس روی تشخیص گفتار خودِ مرورگر می‌افته که معمولاً تو Electron کار نمی‌کنه.",
+      err_stt_unsupported: "مرورگر این کامپیوتر از تشخیص گفتار پشتیبانی نمی‌کنه. تو تنظیمات یه کلید STT بذار.",
+      ov_ready: "آماده",
+      ov_listening: "گوش می‌دم…",
+      ov_thinking: "در حال فهمیدن…",
+      ov_yes: "بله؟",
+      ov_done: "انجام شد.",
+      ov_failed: "نتونستم انجام بدم.",
+      ov_mic_error: "خطای میکروفون/STT: ",
+      ov_no_engine: "این کامپیوتر تشخیص گفتار نداره و کلید STT هم تنظیم نشده. برو تنظیمات.",
+      ov_mic_denied: "اجازه‌ی میکروفون داده نشده.",
+      ov_browser_stt_broken: "تشخیص گفتار مرورگر روی این کامپیوتر کار نمی‌کنه. تو تنظیمات یه کلید STT (رایگان، Groq) بذار.",
+      terms_title: "قرارداد و قوانین استفاده و پشتیبانی",
+      terms_body: "با استفاده از جارویس، شما با موارد زیر موافقت می‌کنید:\n۱. این نرم‌افزار «همان‌طور که هست» ارائه می‌شود و تضمینی برای عملکرد بدون خطای آن وجود ندارد.\n۲. جارویس مستقل از هر سرویس هوش مصنوعی است. کلید API را خودتان وارد می‌کنید و مسئولیت هزینه‌ها و قوانین آن سرویس با شماست.\n۳. تنظیمات، گفتگوها و کلیدهای API شما فقط روی همین کامپیوتر ذخیره می‌شوند و هیچ‌وقت به سرور Avash Studio ارسال نمی‌شوند.\n۴. دستورهای سیستمی («اجرا کن») فقط بعد از تایید صریح شما در هر بار اجرا می‌شوند.\n۵. استفاده از این نرم‌افزار برای هر کار غیرقانونی ممنوع است.\n۶. این نرم‌افزار در حال توسعه است و ممکن است با مشکلاتی روبه‌رو شوید.",
+      bug_contact: "باگ دیدی؟ لطفاً به avash993@gmail.com پیام بده",
+      tray_open: "باز کردن جارویس",
+      tray_wake_on: "روشن کردن گوش‌به‌زنگ",
+      tray_wake_off: "خاموش کردن گوش‌به‌زنگ",
+      tray_quit: "خروج",
     },
     ar: {
       error_prefix: 'خطأ: ', attached_files: 'الملفات: ', memory_full: 'الذاكرة ممتلئة (الحد التجريبي ٥ عناصر).', provider_custom: 'مخصص',
@@ -88,6 +134,31 @@ window.I18N = (function () {
       download: '⬇ تنزيل', download_all: '📦 تنزيل الكل (zip)',
       err_connect_first: 'يجب أولاً ربط خدمة ذكاء اصطناعي (API).', err_no_mic: 'هذا الجهاز لا يدعم التعرف على الصوت.',
       action_done: '(تم)', action_failed: '(تعذر التنفيذ)',
+      models_found: "تم العثور على {n} نموذج",
+      run_not_executed: "لم يتم التنفيذ.",
+      new_chat_title: "محادثة جديدة",
+      wake_hint_stt_on: "يستمع جارفيس في الخلفية عبر Whisper؛ ولا يُرفع أي صوت إلا أثناء وجود كلام.",
+      wake_hint_stt_off: "لم تضع مفتاح STT أعلاه، لذلك سيعود إلى التعرف على الكلام الخاص بالمتصفح والذي لا يعمل غالبًا داخل Electron.",
+      err_stt_unsupported: "متصفح هذا الجهاز لا يدعم التعرف على الكلام. أضف مفتاح STT في الإعدادات.",
+      ov_ready: "جاهز",
+      ov_listening: "أستمع…",
+      ov_thinking: "أفكّر…",
+      ov_yes: "نعم؟",
+      ov_done: "تم.",
+      ov_failed: "تعذّر تنفيذ ذلك.",
+      ov_mic_error: "خطأ في الميكروفون/STT: ",
+      ov_no_engine: "لا يوجد تعرف على الكلام هنا ولم يُضبط مفتاح STT. افتح الإعدادات.",
+      ov_mic_denied: "تم رفض إذن الميكروفون.",
+      ov_browser_stt_broken: "التعرف على الكلام في المتصفح لا يعمل على هذا الجهاز. أضف مفتاح STT مجانيًا (Groq) في الإعدادات.",
+      terms_title: "شروط الاستخدام والدعم",
+      terms_body: "باستخدامك جارفيس فإنك توافق على ما يلي:\n١. يُقدَّم البرنامج \"كما هو\" دون ضمان لعمله الخالي من الأخطاء.\n٢. جارفيس مستقل عن أي مزوّد ذكاء اصطناعي. تُدخل مفتاح API بنفسك وتتحمل تكاليف تلك الخدمة وشروطها.\n٣. تُحفظ إعداداتك ومحادثاتك ومفاتيح API على هذا الجهاز فقط ولا تُرسل إلى أي خادم تابع لاستوديو أواش.\n٤. أوامر النظام (\"تشغيل\") لا تُنفَّذ إلا بعد موافقتك الصريحة في كل مرة.\n٥. يُمنع استخدام البرنامج لأي غرض غير قانوني.\n٦. البرنامج قيد التطوير وقد تواجه بعض المشاكل.",
+      bug_contact: "وجدت خطأً؟ يرجى مراسلة avash993@gmail.com",
+      tray_open: "فتح جارفيس",
+      tray_wake_on: "تشغيل كلمة التنبيه",
+      tray_wake_off: "إيقاف كلمة التنبيه",
+      tray_quit: "خروج",
+      stt_key: "مفتاح التعرف على الكلام (مجاني، من console.groq.com)",
+      stt_key_hint: "بدونه يعود التعرف على الصوت إلى محرك المتصفح الذي نادرًا ما يعمل داخل Electron. معه يرسل جارفيس مقطع الكلام الذي اكتشفه فقط إلى Whisper للتحويل بدقة؛ ولا يُرسل شيء أثناء الصمت.",
     },
     ru: {
       error_prefix: 'Ошибка: ', attached_files: 'Файлы: ', memory_full: 'Память переполнена (лимит демо — 5).', provider_custom: 'Свой',
@@ -117,6 +188,31 @@ window.I18N = (function () {
       download: '⬇ Скачать', download_all: '📦 Скачать всё (zip)',
       err_connect_first: 'Сначала подключите ИИ-сервис (API).', err_no_mic: 'На этом компьютере нет распознавания речи.',
       action_done: '(готово)', action_failed: '(не удалось)',
+      models_found: "Найдено моделей: {n}",
+      run_not_executed: "Не выполнено.",
+      new_chat_title: "Новый чат",
+      wake_hint_stt_on: "Джарвис слушает в фоне через Whisper; звук загружается, только когда кто-то говорит.",
+      wake_hint_stt_off: "Ключ STT выше не указан, поэтому используется встроенное распознавание речи браузера, которое в Electron обычно не работает.",
+      err_stt_unsupported: "В браузере этого компьютера нет распознавания речи. Добавьте ключ STT в настройках.",
+      ov_ready: "Готов",
+      ov_listening: "Слушаю…",
+      ov_thinking: "Думаю…",
+      ov_yes: "Да?",
+      ov_done: "Готово.",
+      ov_failed: "Не удалось это сделать.",
+      ov_mic_error: "Ошибка микрофона/STT: ",
+      ov_no_engine: "Здесь нет распознавания речи, и ключ STT не задан. Откройте настройки.",
+      ov_mic_denied: "Доступ к микрофону запрещён.",
+      ov_browser_stt_broken: "Распознавание речи браузера не работает на этом компьютере. Добавьте бесплатный ключ STT (Groq) в настройках.",
+      terms_title: "Условия использования и поддержка",
+      terms_body: "Используя Jarvis, вы соглашаетесь со следующим:\n1. Программа предоставляется «как есть», без гарантий безошибочной работы.\n2. Jarvis не зависит от какого-либо поставщика ИИ. Вы сами вводите API-ключ и отвечаете за стоимость и условия этого сервиса.\n3. Ваши настройки, чаты и API-ключи хранятся только на этом компьютере и никогда не отправляются на серверы Avash Studio.\n4. Системные команды («Выполнить») запускаются только после вашего явного подтверждения каждый раз.\n5. Запрещено использовать программу в незаконных целях.\n6. Программа в активной разработке, возможны проблемы.",
+      bug_contact: "Нашли баг? Напишите на avash993@gmail.com",
+      tray_open: "Открыть Jarvis",
+      tray_wake_on: "Включить голосовую активацию",
+      tray_wake_off: "Выключить голосовую активацию",
+      tray_quit: "Выход",
+      stt_key: "Ключ распознавания речи (бесплатно, console.groq.com)",
+      stt_key_hint: "Без него распознавание голоса переключается на встроенный движок браузера, который в Electron почти не работает. С ним Jarvis отправляет в Whisper только тот фрагмент речи, который услышал; пока тихо, ничего не отправляется.",
     },
   };
   const RTL = new Set(['fa', 'ar']);
@@ -132,5 +228,18 @@ window.I18N = (function () {
     document.querySelectorAll('[data-i18n-ph]').forEach((el) => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
   }
 
-  return { t, apply, get current() { return current; }, langs: Object.keys(DICT) };
+  function detect() {
+    const n = (navigator.language || 'en').toLowerCase();
+    if (n.startsWith('fa')) return 'fa';
+    if (n.startsWith('ar')) return 'ar';
+    if (n.startsWith('ru')) return 'ru';
+    return 'en';
+  }
+  function tf(key, vars) {
+    let out = t(key);
+    Object.keys(vars || {}).forEach((k) => { out = out.replace('{' + k + '}', vars[k]); });
+    return out;
+  }
+
+  return { t, tf, detect, apply, get current() { return current; }, langs: Object.keys(DICT) };
 })();

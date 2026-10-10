@@ -19,8 +19,31 @@ function loadStore() {
 function saveStore(obj) { fs.writeFileSync(STORE_FILE, JSON.stringify(obj, null, 2), 'utf-8'); }
 let store = loadStore();
 
+
+// ---------- small 4-language message table for things produced in the main process ----------
+const MT = {
+  en: { empty: 'Empty reply (maybe a reasoning model; try another model)', emptyLen: ' — finish_reason: length (the model spent every token "thinking")', emptyShort: 'Empty reply',
+        badKey: ' (invalid key)', badUrl: ' (wrong URL or model)', rate: ' (rate limit)', noStt: 'Speech-recognition (STT) key is not set', badStt: ' (invalid STT key)', rateStt: ' (STT rate limit)' },
+  fa: { empty: 'پاسخ خالی بود (ممکنه مدل reasoning باشه؛ مدل دیگه‌ای امتحان کن)', emptyLen: ' — finish_reason: length (مدل کل توکن‌ها رو صرف «فکر کردن» کرد)', emptyShort: 'پاسخ خالی بود',
+        badKey: ' (کلید نامعتبر)', badUrl: ' (آدرس یا مدل اشتباه)', rate: ' (سقف درخواست)', noStt: 'کلید تشخیص گفتار (STT) تنظیم نشده', badStt: ' (کلید STT نامعتبر)', rateStt: ' (سقف درخواست STT)' },
+  ar: { empty: 'كان الرد فارغًا (ربما نموذج استدلال؛ جرّب نموذجًا آخر)', emptyLen: ' — finish_reason: length (استهلك النموذج كل الرموز في «التفكير»)', emptyShort: 'كان الرد فارغًا',
+        badKey: ' (مفتاح غير صالح)', badUrl: ' (عنوان أو نموذج خاطئ)', rate: ' (تم بلوغ حد الطلبات)', noStt: 'لم يتم ضبط مفتاح التعرف على الكلام (STT)', badStt: ' (مفتاح STT غير صالح)', rateStt: ' (حد طلبات STT)' },
+  ru: { empty: 'Пустой ответ (возможно, модель с рассуждением; попробуйте другую)', emptyLen: ' — finish_reason: length (модель израсходовала все токены на «размышления»)', emptyShort: 'Пустой ответ',
+        badKey: ' (неверный ключ)', badUrl: ' (неверный адрес или модель)', rate: ' (лимит запросов)', noStt: 'Ключ распознавания речи (STT) не задан', badStt: ' (неверный ключ STT)', rateStt: ' (лимит запросов STT)' },
+  tray: {
+    en: { open: 'Open Jarvis', wakeOn: 'Turn wake word on', wakeOff: 'Turn wake word off', quit: 'Quit' },
+    fa: { open: 'باز کردن جارویس', wakeOn: 'روشن کردن گوش‌به‌زنگ', wakeOff: 'خاموش کردن گوش‌به‌زنگ', quit: 'خروج' },
+    ar: { open: 'فتح جارفيس', wakeOn: 'تشغيل كلمة التنبيه', wakeOff: 'إيقاف كلمة التنبيه', quit: 'خروج' },
+    ru: { open: 'Открыть Jarvis', wakeOn: 'Включить голосовую активацию', wakeOff: 'Выключить голосовую активацию', quit: 'Выход' },
+  },
+};
+function curLang() { return MT[store.uiLang] ? store.uiLang : 'en'; }
+function mt(key) { return MT[curLang()][key]; }
+function trayText() { return MT.tray[curLang()]; }
+
+let refreshTray = () => {};
 ipcMain.handle('store:get', (_e, key, def) => (key in store ? store[key] : def ?? null));
-ipcMain.handle('store:set', (_e, key, val) => { store[key] = val; saveStore(store); return true; });
+ipcMain.handle('store:set', (_e, key, val) => { store[key] = val; saveStore(store); if (key === 'uiLang') refreshTray(); return true; });
 ipcMain.handle('store:delete', (_e, key) => { delete store[key]; saveStore(store); return true; });
 
 // ---------- developer PIN: PBKDF2 + random salt, stored locally only (never plaintext) ----------
@@ -76,7 +99,7 @@ async function apiPost(base, path, key, body) {
   if (!res.ok) {
     let msg = text.slice(0, 200);
     try { const j = JSON.parse(text); msg = (j.error && (j.error.message || j.error)) || j.message || msg; } catch {}
-    const hint = { 401: ' (کلید نامعتبر)', 403: ' (کلید نامعتبر)', 404: ' (آدرس یا مدل اشتباه)', 429: ' (سقف درخواست)' }[res.status] || '';
+    const hint = { 401: mt('badKey'), 403: mt('badKey'), 404: mt('badUrl'), 429: mt('rate') }[res.status] || '';
     throw new Error(`HTTP ${res.status}${hint}: ${msg}`);
   }
   return JSON.parse(text);
@@ -109,8 +132,8 @@ ipcMain.handle('api:chat', async (_e, { base, key, model, messages, maxTokens })
   }
   if (!text) {
     const finish = lastJson?.choices?.[0]?.finish_reason;
-    const extra = finish === 'length' ? ' — finish_reason: length (مدل کل توکن‌ها رو صرف «فکر کردن» کرد)' : '';
-    throw new Error('پاسخ خالی بود (ممکنه مدل reasoning باشه؛ مدل دیگه‌ای امتحان کن)' + extra);
+    const extra = finish === 'length' ? mt('emptyLen') : '';
+    throw new Error(mt('empty') + extra);
   }
   return text;
 });
@@ -140,7 +163,7 @@ ipcMain.handle('api:test', async (_e, { base, key, model }) => {
     model, messages: [{ role: 'user', content: 'Reply with the single word: OK' }], max_tokens: 64,
   });
   const t = (j.choices?.[0]?.message?.content || '').trim();
-  if (!t) throw new Error('پاسخ خالی بود');
+  if (!t) throw new Error(mt('emptyShort'));
   return t;
 });
 
@@ -160,7 +183,7 @@ ipcMain.handle('api:models', async (_e, { base, key }) => {
 // ship with, so it silently fails on most machines. This hits a real cloud model instead,
 // using the same kind of API key the user already pastes in on the "Connect API" screen. ----------
 ipcMain.handle('api:transcribe', async (_e, { key, base64, mime, lang }) => {
-  if (!key) throw new Error('کلید تشخیص گفتار (STT) تنظیم نشده');
+  if (!key) throw new Error(mt('noStt'));
   const buf = Buffer.from(base64, 'base64');
   const form = new FormData();
   form.append('file', new Blob([buf], { type: mime || 'audio/webm' }), 'audio.webm');
@@ -175,7 +198,7 @@ ipcMain.handle('api:transcribe', async (_e, { key, base64, mime, lang }) => {
   if (!res.ok) {
     let msg = text.slice(0, 200);
     try { const j = JSON.parse(text); msg = (j.error && (j.error.message || j.error)) || msg; } catch {}
-    const hint = { 401: ' (کلید STT نامعتبر)', 403: ' (کلید STT نامعتبر)', 429: ' (سقف درخواست STT)' }[res.status] || '';
+    const hint = { 401: mt('badStt'), 403: mt('badStt'), 429: mt('rateStt') }[res.status] || '';
     throw new Error(`HTTP ${res.status}${hint}: ${msg}`);
   }
   const j = JSON.parse(text);
@@ -196,6 +219,8 @@ const APP_ALIASES = {
   discord: 'discord.exe', telegram: 'telegram.exe', whatsapp: 'whatsapp.exe', skype: 'skype.exe',
   'نوت پد': 'notepad.exe', 'ماشین حساب': 'calc.exe', 'نقاشی': 'mspaint.exe', 'فایل': 'explorer.exe',
   'تنظیمات': 'ms-settings:', 'مرورگر': 'chrome.exe', 'تلگرام': 'telegram.exe', 'واتساپ': 'whatsapp.exe', 'دیسکورد': 'discord.exe',
+  'المفكرة': 'notepad.exe', 'الآلة الحاسبة': 'calc.exe', 'الإعدادات': 'ms-settings:', 'المتصفح': 'chrome.exe', 'تيليجرام': 'telegram.exe', 'واتساب': 'whatsapp.exe',
+  'блокнот': 'notepad.exe', 'калькулятор': 'calc.exe', 'настройки': 'ms-settings:', 'браузер': 'chrome.exe', 'телеграм': 'telegram.exe', 'ватсап': 'whatsapp.exe', 'дискорд': 'discord.exe',
 };
 const SETTINGS_PAGES = {
   wifi: 'ms-settings:network-wifi', bluetooth: 'ms-settings:bluetooth', display: 'ms-settings:display',
@@ -384,15 +409,17 @@ app.whenReady().then(() => {
   const iconPath = path.join(__dirname, 'assets', 'tray.png');
   const img = fs.existsSync(iconPath) ? nativeImage.createFromPath(iconPath) : nativeImage.createEmpty();
   tray = new Tray(img);
-  const rebuildMenu = (wakeOn) => Menu.buildFromTemplate([
-    { label: 'باز کردن جارویس', click: () => { mainWindow.show(); mainWindow.focus(); } },
-    { label: wakeOn ? 'خاموش کردن گوش‌به‌زنگ' : 'روشن کردن گوش‌به‌زنگ', click: () => mainWindow.webContents.send('tray:toggleWake') },
+  let trayWakeOn = false;
+  const rebuildMenu = (wakeOn) => { const tt = trayText(); return Menu.buildFromTemplate([
+    { label: tt.open, click: () => { mainWindow.show(); mainWindow.focus(); } },
+    { label: wakeOn ? tt.wakeOff : tt.wakeOn, click: () => mainWindow.webContents.send('tray:toggleWake') },
     { type: 'separator' },
-    { label: 'خروج', click: () => { app.isQuiting = true; app.quit(); } },
-  ]);
+    { label: tt.quit, click: () => { app.isQuiting = true; app.quit(); } },
+  ]); };
   tray.setToolTip('Jarvis');
   tray.setContextMenu(rebuildMenu(false));
-  ipcMain.handle('tray:setWakeState', (_e, on) => tray.setContextMenu(rebuildMenu(on)));
+  refreshTray = () => tray.setContextMenu(rebuildMenu(trayWakeOn));
+  ipcMain.handle('tray:setWakeState', (_e, on) => { trayWakeOn = on; tray.setContextMenu(rebuildMenu(on)); });
   tray.on('click', () => { mainWindow.show(); mainWindow.focus(); });
 
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createMainWindow(); });

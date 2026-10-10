@@ -7,7 +7,14 @@ let assistantName = 'جارویس';
 let wakeHandle = null;         // { stop() } from STT.startWakeLoop, when using Whisper
 let legacyWakeOn = false;      // when falling back to the browser's own (unreliable) recognizer
 let legacyRecognizer = null;
-let legacyLang = 'fa-IR';
+const BCP = { en: 'en-US', fa: 'fa-IR', ar: 'ar-SA', ru: 'ru-RU' };
+let uiLang = 'en';
+let legacyLang = 'en-US';
+const T = (k) => window.I18N.t(k);
+async function refreshLang() {
+  uiLang = await window.jarvis.store.get('uiLang', 'en');
+  window.I18N.apply(uiLang);
+}
 let legacyNetworkErrors = 0;
 let warnedAboutSpeechLimit = false;
 
@@ -22,7 +29,7 @@ function setStatus(text, listening) {
 function speak(text, lang, onDone) {
   if (!synth || !text) { onDone && onDone(); return; }
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = lang === 'en' ? 'en-US' : 'fa-IR';
+  u.lang = BCP[lang] || 'en-US';
   u.onend = () => onDone && onDone();
   u.onerror = () => onDone && onDone();
   synth.cancel();
@@ -34,7 +41,7 @@ function speak(text, lang, onDone) {
 // detection (window.STT) means no audio is sent anywhere while the room is quiet -- only the
 // burst of speech that was actually said gets uploaded and transcribed.
 async function startWhisperWakeLoop() {
-  setStatus('گوش می‌دم…', false);
+  setStatus(T('ov_listening'), false);
   wakeHandle = await window.STT.startWakeLoop({
     lang: '',
     onHeard: (text) => {
@@ -43,7 +50,7 @@ async function startWhisperWakeLoop() {
       // not the wake word -- treat it as background noise/conversation and keep listening quietly
     },
     onError: (err) => {
-      setStatus('خطای میکروفون/STT: ' + (err && err.message || err), false);
+      setStatus(T('ov_mic_error') + (err && err.message || err), false);
     },
   });
 }
@@ -58,7 +65,7 @@ function stopWhisperWakeLoop() {
 // the Whisper path above.
 function startLegacyWakeLoop() {
   if (!SpeechRecognitionCtor) {
-    setStatus('این کامپیوتر نه تشخیص گفتار مرورگر داره نه کلید STT تنظیم‌شده. برو تنظیمات.', false);
+    setStatus(T('ov_no_engine'), false);
     return;
   }
   legacyWakeOn = true;
@@ -72,7 +79,7 @@ function restartLegacyRecognizer() {
   if (!legacyWakeOn || busy) return;
   if (legacyRecognizer) { try { legacyRecognizer.abort(); } catch {} }
   legacyRecognizer = new SpeechRecognitionCtor();
-  legacyLang = legacyLang === 'fa-IR' ? 'en-US' : 'fa-IR';
+  legacyLang = legacyLang === 'en-US' ? (BCP[uiLang] || 'en-US') : 'en-US';
   legacyRecognizer.lang = legacyLang;
   legacyRecognizer.continuous = true;
   legacyRecognizer.interimResults = true;
@@ -89,13 +96,13 @@ function restartLegacyRecognizer() {
   legacyRecognizer.onerror = (e) => {
     if (!legacyWakeOn) return;
     if (e.error === 'no-speech' || e.error === 'aborted') { setTimeout(restartLegacyRecognizer, 120); return; }
-    if (e.error === 'not-allowed') { setStatus('اجازه‌ی میکروفون داده نشده.', false); legacyWakeOn = false; return; }
+    if (e.error === 'not-allowed') { setStatus(T('ov_mic_denied'), false); legacyWakeOn = false; return; }
     if (e.error === 'network') {
       legacyNetworkErrors++;
       if (legacyNetworkErrors >= 5) {
         if (!warnedAboutSpeechLimit) {
           warnedAboutSpeechLimit = true;
-          setStatus('تشخیص گفتار مرورگر روی این کامپیوتر کار نمی‌کنه. تو تنظیمات یه کلید STT (رایگان، Groq) بذار تا دقیق بشه.', false);
+          setStatus(T('ov_browser_stt_broken'), false);
         }
         setTimeout(restartLegacyRecognizer, 15000);
         return;
@@ -122,8 +129,9 @@ async function onWakeDetected() {
   busy = true;
   stopLegacyWakeLoop(); // whisper loop pauses itself naturally (listenForCommand reuses the same mic graph)
   await window.jarvis.overlay.show();
-  const lang = legacyLang === 'en-US' ? 'en' : 'fa';
-  const hello = lang === 'en' ? 'Yes?' : 'بله؟';
+  await refreshLang();
+  const lang = uiLang;
+  const hello = T('ov_yes');
   setStatus(hello, false);
   speak(hello, lang, () => listenForCommand(lang));
   setTimeout(() => listenForCommand(lang), 2500); // safety net if TTS's onend never fires
@@ -133,13 +141,13 @@ let commandStarted = false;
 async function listenForCommand(lang) {
   if (commandStarted) return;
   commandStarted = true;
-  setStatus(lang === 'en' ? 'Listening…' : 'گوش می‌دم…', true);
+  setStatus(T('ov_listening'), true);
   try {
     let text = '';
     if (await window.STT.sttKeyConfigured()) {
       text = await window.STT.listenOnce({
-        lang: lang === 'en' ? 'en' : 'fa',
-        onThinking: () => setStatus(lang === 'en' ? 'Thinking…' : 'در حال فهمیدن…', false),
+        lang: '', // auto-detect: the person may speak a different language than the UI
+        onThinking: () => setStatus(T('ov_thinking'), false),
       });
     } else if (SpeechRecognitionCtor) {
       text = await legacyListenOnce(lang);
@@ -147,14 +155,14 @@ async function listenForCommand(lang) {
     if (!text) { finishTurn(); return; }
     await handleCommand(text, lang);
   } catch (err) {
-    setStatus((lang === 'en' ? 'Error: ' : 'خطا: ') + (err.message || err), false);
+    setStatus(T('error_prefix') + (err.message || err), false);
     setTimeout(finishTurn, 1800);
   }
 }
 function legacyListenOnce(lang) {
   return new Promise((resolve) => {
     const r = new SpeechRecognitionCtor();
-    r.lang = lang === 'en' ? 'en-US' : 'fa-IR';
+    r.lang = BCP[lang] || 'en-US';
     r.continuous = false; r.interimResults = true;
     r.onresult = (e) => {
       const last = e.results[e.results.length - 1];
@@ -175,14 +183,14 @@ async function handleCommand(text, lang) {
     let finalText = act.clean || answer;
     if (act.name) {
       const r = await window.Actions.run(act.name, act.arg);
-      finalText = (finalText ? finalText + ' ' : '') + (r && r.ok ? (lang === 'en' ? 'Done.' : 'انجام شد.') : (lang === 'en' ? "Couldn't do that." : 'نتونستم انجام بدم.'));
+      finalText = (finalText ? finalText + ' ' : '') + (r && r.ok ? T('ov_done') : T('ov_failed'));
     }
     await window.ChatCore.appendHistory('user', text);
     await window.ChatCore.appendHistory('assistant', finalText);
     setStatus(finalText, false);
     speak(finalText, lang, finishTurn);
   } catch (err) {
-    setStatus((lang === 'en' ? 'Error: ' : 'خطا: ') + (err.message || err), false);
+    setStatus(T('error_prefix') + (err.message || err), false);
     setTimeout(finishTurn, 1800);
   }
 }
@@ -214,8 +222,9 @@ window.jarvis.on('wake:trigger', () => { if (!busy) { window.jarvis.overlay.show
 
 window.jarvis.on('wake:start', async () => {
   assistantName = await window.jarvis.store.get('assistantName', 'جارویس');
+  await refreshLang();
   await startWakeLoop();
 });
 window.jarvis.on('wake:stop', () => { stopWakeLoop(); window.jarvis.overlay.hide(); });
 
-setStatus('آماده', false);
+refreshLang().then(() => setStatus(T('ov_ready'), false));

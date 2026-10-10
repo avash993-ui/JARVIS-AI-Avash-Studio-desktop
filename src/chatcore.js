@@ -9,7 +9,7 @@ window.ChatCore = (function () {
       window.jarvis.store.get('apiModel', ''),
       window.jarvis.store.get('assistantName', 'جارویس'),
       window.jarvis.store.get('humor', 40),
-      window.jarvis.store.get('lang', 'fa'),
+      window.jarvis.store.get('uiLang', 'en'),
       window.jarvis.store.get('memory', []),
       window.jarvis.store.get('devOk', false),
       window.jarvis.store.get('allowExec', false),
@@ -21,7 +21,7 @@ window.ChatCore = (function () {
 
   async function ask(question, history) {
     const cfg = await loadCfg();
-    if (!configured(cfg)) throw new Error('اول باید یه هوش مصنوعی (API) وصل کنی.');
+    if (!configured(cfg)) throw new Error(window.I18N ? window.I18N.t('err_connect_first') : 'Connect an AI service first.');
     const system = window.Persona.buildSystemPrompt(cfg);
     const messages = [{ role: 'system', content: system }];
     (history || []).slice(-10).forEach((m) => messages.push({ role: m.role, content: m.text }));
