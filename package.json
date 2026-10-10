@@ -32,6 +32,8 @@
       "allowToChangeInstallationDirectory": true,
       "displayLanguageSelector": true,
       "multiLanguageInstaller": true,
+      "installerLanguages": ["en_US", "fa_IR", "ar_SA", "ru_RU"],
+      "warningsAsErrors": false,
       "deleteAppDataOnUninstall": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
