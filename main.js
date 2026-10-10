@@ -3,6 +3,13 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
+// Pin the app name explicitly so %APPDATA%\Jarvis is always where settings/history live,
+// regardless of what the "name" field in package.json happens to be. Without this, Electron's
+// default (derived from package.json "name", i.e. "jarvis-desktop") can silently differ from
+// the installer's product name ("Jarvis"), which is exactly what makes old data hard to find
+// when uninstalling/reinstalling.
+app.setName('Jarvis');
+
 const STORE_FILE = path.join(app.getPath('userData'), 'jarvis-store.json');
 
 // ---------- tiny JSON key/value store (replaces Android SharedPreferences) ----------

@@ -1,0 +1,20 @@
+Jarvis — Terms of Use (Avash Studio)
+
+By installing and using Jarvis, you agree to the following:
+
+1. This software is provided "as is", with no guarantee of error-free or uninterrupted operation.
+
+2. Jarvis is an independent assistant and is not affiliated with any specific AI provider. You supply your own API key for the service of your choice, and you are solely responsible for that service's costs and terms of use.
+
+3. Your settings, conversations, and API keys are stored only on this computer and are never sent to any server owned by Avash Studio.
+
+4. The on-device command runner ("Run") only executes a command after your explicit confirmation, every single time. Nothing runs without your approval.
+
+5. You may not use this software for any unlawful purpose.
+
+6. This software is under active development and you may encounter issues.
+
+If you run into a bug or any other issue while using Jarvis, please contact us so we can look into it:
+avash993@gmail.com
+
+Click "I Agree" to continue the installation.
